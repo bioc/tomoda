@@ -1,16 +1,42 @@
 Package: tomoda
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Tomo-seq data analysis
+Version: 0.99.0
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Wendao",
+           family = "Liu",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+           email = "liuwd15@tsinghua.org.cn",
+		   comment = c(ORCID = "0000-0002-5124-9338"))
+Description: This package provides many easy-to-use methods to analyze and 
+	visualize tomo-seq data.
+Depends: R (>= 3.5.0)
+Imports:
+	methods,
+	stats,
+	grDevices,
+	reshape2,
+	Rtsne,
+	umap,
+	colorRamps,
+	ggplot2,
+	ggrepel,
+	SummarizedExperiment
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Suggests: 
+    knitr,
+    rmarkdown,
+    BiocStyle,
+    testthat
+URL: https://github.com/liuwd15/tomoda
+BugReports: https://github.com/liuwd15/tomoda/issues
+biocViews: 
+	Gene Expression, 
+	Sequencing,
+	RNAseq, 
+	Transcriptomics,
+	Clustering, 
+	Visualization
+VignetteBuilder: knitr
