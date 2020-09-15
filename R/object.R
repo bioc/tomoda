@@ -1,6 +1,6 @@
-#' Create a \code{SummarizedExperiment} object
+#' Create a \code{Tomo} object
 #'
-#' Create a \code{SummarizedExperiment} object from raw read counts or normalized read counts.
+#' Create a \code{Tomo} object from raw read counts or normalized read counts.
 #'
 #' @param matrix.count A numeric matrix or matrix-like data stucture that can be coverted to matrix, with genes with rows, sections as columns and values as raw read counts.
 #' Columns should be sorted according to section numbers.
@@ -67,45 +67,3 @@ CreateTomo <- function(matrix.count=NULL, matrix.normalized=NULL, min.section=3)
 
     return(tomo_object)
 }
-
-setGeneric("Normalize",function(object, ...) standardGeneric("Normalize"))
-setMethod("Normalize", signature(object="SummarizedExperiment"), Normalize)
-
-setGeneric("Scale",function(object, ...) standardGeneric("Scale"))
-setMethod("Scale", signature(object="SummarizedExperiment"), Scale)
-
-setGeneric("HClust",function(object, ...) standardGeneric("HClust"))
-setMethod("HClust", signature(object="SummarizedExperiment"), HClust)
-
-setGeneric("KMeans",function(object, ...) standardGeneric("KMeans"))
-setMethod("KMeans", signature(object="SummarizedExperiment"), KMeans)
-
-setGeneric("FindPeakGenes",function(object, ...) standardGeneric("FindPeakGenes"))
-setMethod("FindPeakGenes", signature(object="SummarizedExperiment"), FindPeakGenes)
-
-setGeneric("PCA",function(object, ...) standardGeneric("PCA"))
-setMethod("PCA", signature(object="SummarizedExperiment"), PCA)
-
-setGeneric("TSNE",function(object, ...) standardGeneric("TSNE"))
-setMethod("TSNE", signature(object="SummarizedExperiment"), TSNE)
-
-setGeneric("UMAP",function(object, ...) standardGeneric("UMAP"))
-setMethod("UMAP", signature(object="SummarizedExperiment"), UMAP)
-
-setGeneric("LinePlot",function(object, ...) standardGeneric("LinePlot"))
-setMethod("LinePlot", signature(object="SummarizedExperiment"), LinePlot)
-
-setGeneric("EmbedPlot",function(object, ...) standardGeneric("EmbedPlot"))
-setMethod("EmbedPlot", signature(object="SummarizedExperiment"), EmbedPlot)
-
-setGeneric("GeneEmbedPlot",function(object, ...) standardGeneric("GeneEmbedPlot"))
-setMethod("GeneEmbedPlot", signature(object="SummarizedExperiment"), GeneEmbedPlot)
-
-setGeneric("ExpHeatmap",function(object, ...) standardGeneric("ExpHeatmap"))
-setMethod("ExpHeatmap", signature(object="SummarizedExperiment"), ExpHeatmap)
-
-setGeneric("CorHeatmap",function(object, ...) standardGeneric("CorHeatmap"))
-setMethod("CorHeatmap", signature(object="SummarizedExperiment"), CorHeatmap)
-
-setGeneric("GeneCorHeatmap",function(object, ...) standardGeneric("GeneCorHeatmap"))
-setMethod("GeneCorHeatmap", signature(object="SummarizedExperiment"), GeneCorHeatmap)

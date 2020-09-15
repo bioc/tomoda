@@ -1,4 +1,4 @@
-# tomoda: 
+# tomoda
 
 tomoda is a R package for **tomo**-seq **d**ata **a**nalysis. The main purpose of the package is to find zones with similar transcriptional profiles and spatially expressed genes in a tomo-seq sample. Several visulization functions are available to create high quality and easy-to-modify plots.
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/object.R
 \name{CreateTomo}
 \alias{CreateTomo}
-\title{Create a \code{SummarizedExperiment} object}
+\title{Create a \code{Tomo} object}
 \usage{
 CreateTomo(matrix.count = NULL, matrix.normalized = NULL, min.section = 3)
 }
@@ -19,7 +19,7 @@ Columns should be sorted according to section numbers.}
 A \code{SummarizedExperiment} object
 }
 \description{
-Create a \code{SummarizedExperiment} object from raw read counts or normalized read counts.
+Create a \code{Tomo} object from raw read counts or normalized read counts.
 }
 \details{
 This is the method to create a \code{Tomo} object, which is an instance of class \code{SummarizedExperiment}. At least one of raw read count matrix and normalized raw count matrix (like FPKM, TPM, ...) must be used for input.
