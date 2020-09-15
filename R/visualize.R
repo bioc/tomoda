@@ -33,31 +33,31 @@
 #'  facet=TRUE)
 LinePlot <- function(object, genes, matrix='normalized', facet=FALSE, span=0.3)
 {
-  exp_matrix <- GetMatrix(object, matrix)
-  exp_genes <- subset(exp_matrix, rowData(object)$gene %in% genes)
-  exp_genes_df <- NULL
-  sections <- factor(colData(object)$section, levels=colData(object)$section)
-  for(i in 1:nrow(exp_genes))
-  {
-    exp_gene_df <- data.frame(gene=genes[i], section=sections, value=exp_genes[i,])
-    exp_genes_df <- rbind(exp_genes_df, exp_gene_df)
-  }
-  ylab <- c('Count', 'Normalized count', 'Scaled expression')[c('count', 'normalized', 'scaled') == matrix]
+    exp_matrix <- GetMatrix(object, matrix)
+    exp_genes <- subset(exp_matrix, rowData(object)$gene %in% genes)
+    exp_genes_df <- NULL
+    sections <- factor(colData(object)$section, levels=colData(object)$section)
+    for(i in seq_len(nrow(exp_genes)))
+    {
+        exp_gene_df <- data.frame(gene=genes[i], section=sections, value=exp_genes[i,])
+        exp_genes_df <- rbind(exp_genes_df, exp_gene_df)
+    }
+    ylab <- c('Count', 'Normalized count', 'Scaled expression')[c('count', 'normalized', 'scaled') == matrix]
 
-  g <- ggplot(exp_genes_df, aes_string(x='section', y='value', group='gene', color='gene')) +
-    labs(x='', y=ylab) +
-    theme_bw() +
-    theme(legend.position='top', axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
+    g <- ggplot(exp_genes_df, aes_string(x='section', y='value', group='gene', color='gene')) +
+        labs(x='', y=ylab) +
+        theme_bw() +
+        theme(legend.position='top', axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 
-  if(span > 0)
-    g <- g + geom_smooth(method='loess', span = span, se=F)
-  else
-    g <- g + geom_line(size=1)
+    if(span > 0)
+        g <- g + geom_smooth(method='loess', span=span, se=FALSE)
+    else
+        g <- g + geom_line(size=1)
 
-  if(facet)
-    g <- g + facet_wrap(~gene, scales = 'free') + theme(legend.position='none')
+    if(facet)
+        g <- g + facet_wrap(~gene, scales='free') + theme(legend.position='none')
 
-  return(g)
+    return(g)
 }
 
 #' Embedding plot for sections
@@ -93,65 +93,65 @@ LinePlot <- function(object, genes, matrix='normalized', facet=FALSE, span=0.3)
 #' EmbedPlot(zh, group="kmeans_cluster")
 EmbedPlot <- function(object, group='section', method='TSNE')
 {
-  if(!group %in% names(colData(object)))
-  {
-    group <- 'section'
-    cat("Unknown parameter 'group' for plotting sections!")
-  }
-  colData(object)[[group]] <- as.character(colData(object)[[group]])
+    if(!group %in% names(colData(object)))
+    {
+        group <- 'section'
+        cat("Unknown parameter 'group' for plotting sections!")
+    }
+    colData(object)[[group]] <- as.character(colData(object)[[group]])
 
-  if(method == 'TSNE')
-  {
-    if(all(c('TSNE1','TSNE2') %in% names(colData(object))))
+    if(method == 'TSNE')
     {
-      g <- ggplot(data.frame(colData(object)), aes_string(x='TSNE1', y='TSNE2', color=group)) +
-        geom_point() +
-        geom_text_repel(aes_string(label='section')) +
-        theme_bw() +
-        theme(legend.position='none')
-      return(g)
+        if(all(c('TSNE1','TSNE2') %in% names(colData(object))))
+        {
+            g <- ggplot(data.frame(colData(object)), aes_string(x='TSNE1', y='TSNE2', color=group)) +
+                geom_point() +
+                geom_text_repel(aes_string(label='section')) +
+                theme_bw() +
+                theme(legend.position='none')
+            return(g)
+        }
+        else
+        {
+            cat("Function 'TSNE' must be run before plotting TSNE embeddings.\n")
+        }
+    }
+    else if(method == 'UMAP')
+    {
+        if(all(c('UMAP1','UMAP2') %in% names(colData(object))))
+        {
+            g <- ggplot(data.frame(colData(object)), aes_string(x='UMAP1', y='UMAP2', color=group)) +
+                geom_point(aes_string()) +
+                geom_text_repel(aes_string(label='section')) +
+                theme_bw() +
+                theme(legend.position='none')
+            return(g)
+        }
+        else
+        {
+            cat("Function 'UMAP' must be run before plotting UMAP embeddings.\n")
+        }
+    }
+    else if(method == 'PCA')
+    {
+        if(all(c('PC1','PC2') %in% names(colData(object))))
+        {
+            g <- ggplot(data.frame(colData(object)), aes_string(x='PC1', y='PC2', color=group)) +
+                geom_point(aes_string()) +
+                geom_text_repel(aes_string(label='section')) +
+                theme_bw() +
+                theme(legend.position='none')
+            return(g)
+        }
+        else
+        {
+            cat("Function 'PCA' must be run before plotting PC embeddings.\n")
+        }
     }
     else
     {
-      cat("Function 'TSNE' must be run before plotting TSNE embeddings.\n")
+        cat("Unknown embeddings!\n")
     }
-  }
-  else if(method == 'UMAP')
-  {
-    if(all(c('UMAP1','UMAP2') %in% names(colData(object))))
-    {
-      g <- ggplot(data.frame(colData(object)), aes_string(x='UMAP1', y='UMAP2', color=group)) +
-        geom_point(aes_string()) +
-        geom_text_repel(aes_string(label='section')) +
-        theme_bw() +
-        theme(legend.position='none')
-      return(g)
-    }
-    else
-    {
-      cat("Function 'UMAP' must be run before plotting UMAP embeddings.\n")
-    }
-  }
-  else if(method == 'PCA')
-  {
-    if(all(c('PC1','PC2') %in% names(colData(object))))
-    {
-      g <- ggplot(data.frame(colData(object)), aes_string(x='PC1', y='PC2', color=group)) +
-        geom_point(aes_string()) +
-        geom_text_repel(aes_string(label='section')) +
-        theme_bw() +
-        theme(legend.position='none')
-      return(g)
-    }
-    else
-    {
-      cat("Function 'PCA' must be run before plotting PC embeddings.\n")
-    }
-  }
-  else
-  {
-    cat("Unknown embeddings!\n")
-  }
 }
 
 #' Embedding plot for genes
@@ -186,75 +186,75 @@ EmbedPlot <- function(object, group='section', method='TSNE')
 #' GeneEmbedPlot(zh, peak_genes["gene"])
 GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
 {
-  if(group %in% names(gene.df))
-    gene.df[[group]] <- as.factor(gene.df[[group]])
-  if(method == 'TSNE')
-  {
-    if(all(c('TSNE1','TSNE2') %in% names(rowData(object))))
+    if(group %in% names(gene.df))
+        gene.df[[group]] <- as.factor(gene.df[[group]])
+    if(method == 'TSNE')
     {
-      gene.df$TSNE1 <- rowData(object)[as.character(gene.df$gene), 'TSNE1']
-      gene.df$TSNE2 <- rowData(object)[as.character(gene.df$gene), 'TSNE2']
-      g <- ggplot(gene.df, aes_string(x='TSNE1', y='TSNE2')) +
-        theme_bw()
+        if(all(c('TSNE1','TSNE2') %in% names(rowData(object))))
+        {
+            gene.df$TSNE1 <- rowData(object)[as.character(gene.df$gene), 'TSNE1']
+            gene.df$TSNE2 <- rowData(object)[as.character(gene.df$gene), 'TSNE2']
+            g <- ggplot(gene.df, aes_string(x='TSNE1', y='TSNE2')) +
+                theme_bw()
 
-      if(group %in% names(gene.df))
-        g <- g + geom_point(aes_string(color=group))
-      else
-        g <- g + geom_point()
+            if(group %in% names(gene.df))
+                g <- g + geom_point(aes_string(color=group))
+            else
+                g <- g + geom_point()
 
-      return(g)
+            return(g)
+        }
+        else
+        {
+            cat("Function 'TSNE' must be run for input genes before plotting TSNE embeddings.\n")
+        }
+    }
+    else if(method == 'UMAP')
+    {
+        if(all(c('UMAP1','UMAP2') %in% names(rowData(object))))
+        {
+            gene.df$UMAP1 <- rowData(object)[as.character(gene.df$gene), 'UMAP1']
+            gene.df$UMAP2 <- rowData(object)[as.character(gene.df$gene), 'UMAP2']
+            g <- ggplot(gene.df, aes_string(x='UMAP1', y='UMAP2')) +
+                theme_bw()
+
+            if(group %in% names(gene.df))
+                g <- g + geom_point(aes_string(color=group))
+            else
+                g <- g + geom_point()
+
+            return(g)
+        }
+        else
+        {
+            cat("Function 'UMAP' must be run for input genes before plotting UMAP embeddings.\n")
+        }
+    }
+    else if(method == 'PCA')
+    {
+        if(all(c('PC1','PC2') %in% names(rowData(object))))
+        {
+            gene.df$PC1 <- rowData(object)[as.character(gene.df$gene), 'PC1']
+            gene.df$PC2 <- rowData(object)[as.character(gene.df$gene), 'PC2']
+            g <- ggplot(gene.df, aes_string(x='PC1', y='PC2')) +
+                theme_bw()
+
+            if(group %in% names(gene.df))
+                g <- g + geom_point(aes_string(color=group))
+            else
+                g <- g + geom_point()
+
+            return(g)
+        }
+        else
+        {
+            cat("Function 'PCA' must be run for input genes before plotting PC embeddings.\n")
+        }
     }
     else
     {
-      cat("Function 'TSNE' must be run for input genes before plotting TSNE embeddings.\n")
+        cat("Unknown embeddings!\n")
     }
-  }
-  else if(method == 'UMAP')
-  {
-    if(all(c('UMAP1','UMAP2') %in% names(rowData(object))))
-    {
-      gene.df$UMAP1 <- rowData(object)[as.character(gene.df$gene), 'UMAP1']
-      gene.df$UMAP2 <- rowData(object)[as.character(gene.df$gene), 'UMAP2']
-      g <- ggplot(gene.df, aes_string(x='UMAP1', y='UMAP2')) +
-        theme_bw()
-
-      if(group %in% names(gene.df))
-        g <- g + geom_point(aes_string(color=group))
-      else
-        g <- g + geom_point()
-
-      return(g)
-    }
-    else
-    {
-      cat("Function 'UMAP' must be run for input genes before plotting UMAP embeddings.\n")
-    }
-  }
-  else if(method == 'PCA')
-  {
-    if(all(c('PC1','PC2') %in% names(rowData(object))))
-    {
-      gene.df$PC1 <- rowData(object)[as.character(gene.df$gene), 'PC1']
-      gene.df$PC2 <- rowData(object)[as.character(gene.df$gene), 'PC2']
-      g <- ggplot(gene.df, aes_string(x='PC1', y='PC2')) +
-        theme_bw()
-
-      if(group %in% names(gene.df))
-        g <- g + geom_point(aes_string(color=group))
-      else
-        g <- g + geom_point()
-
-      return(g)
-    }
-    else
-    {
-      cat("Function 'PCA' must be run for input genes before plotting PC embeddings.\n")
-    }
-  }
-  else
-  {
-    cat("Unknown embeddings!\n")
-  }
 }
 
 #' Expression heatmap
@@ -291,26 +291,26 @@ GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
 #' ExpHeatmap(zh, peak_genes$gene, size=0)
 ExpHeatmap <- function(object, genes, matrix='scaled', size=5)
 {
-  genes <- rev(as.character(genes))
-  exp_matrix <- GetMatrix(object, matrix)[genes, ]
-  if(matrix == 'normalized')
-    exp_matrix <- log10(exp_matrix + 1)
-  genes_df <- melt(exp_matrix, varnames=c('gene','section'))
-  exp_name <-  c('Log10(Count+1)', 'Log10(Normalized count+1)', 'Scaled expression\n(Z score)')[c('count', 'normalized', 'scaled') == matrix]
+    genes <- rev(as.character(genes))
+    exp_matrix <- GetMatrix(object, matrix)[genes, ]
+    if(matrix == 'normalized')
+        exp_matrix <- log10(exp_matrix + 1)
+    genes_df <- melt(exp_matrix, varnames=c('gene','section'))
+    exp_name <-  c('Log10(Count+1)', 'Log10(Normalized count+1)', 'Scaled expression\n(Z score)')[c('count', 'normalized', 'scaled') == matrix]
 
-  g <- ggplot(genes_df, aes_string(x='section', y='gene', fill='value')) +
-    geom_raster() +
-    scale_fill_gradient2(low='magenta', mid='black', high='yellow', name=exp_name) +
-    theme(axis.line=element_blank(),
-          axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
-          axis.ticks=element_blank(),
-          panel.background=element_blank())
-  if(size == 0)
-    g <- g + theme(axis.text.y=element_blank())
-  else
-    g <- g + theme(axis.text.y=element_text(size=size))
+    g <- ggplot(genes_df, aes_string(x='section', y='gene', fill='value')) +
+        geom_raster() +
+        scale_fill_gradient2(low='magenta', mid='black', high='yellow', name=exp_name) +
+        theme(axis.line=element_blank(),
+              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
+              axis.ticks=element_blank(),
+              panel.background=element_blank())
+    if(size == 0)
+        g <- g + theme(axis.text.y=element_blank())
+    else
+        g <- g + theme(axis.text.y=element_text(size=size))
 
-  return(g)
+    return(g)
 }
 
 #' Correlation heatmap of sections
@@ -345,23 +345,23 @@ ExpHeatmap <- function(object, genes, matrix='scaled', size=5)
 #' CorHeatmap(zh, max.cor=0.3)
 CorHeatmap <- function(object, matrix='scaled', max.cor=0.5, cor.method='pearson')
 {
-  exp_matrix <- GetMatrix(object, matrix=matrix)
-  cor_matrix <- cor(exp_matrix, method=cor.method)
-  cor_matrix[cor_matrix > max.cor] <- max.cor
-  cor_df <- melt(cor_matrix, varnames=c('section1','section2'))
-  # c('Pearson r', 'Kendall τ', 'Spearman ρ')
-  cor_name <- expression("Pearson"~r,"Kendall"~tau,"Spearman"~rho)[c('pearson', 'kendall', 'spearman') == cor.method]
+    exp_matrix <- GetMatrix(object, matrix=matrix)
+    cor_matrix <- cor(exp_matrix, method=cor.method)
+    cor_matrix[cor_matrix > max.cor] <- max.cor
+    cor_df <- melt(cor_matrix, varnames=c('section1','section2'))
+    # c('Pearson r', 'Kendall τ', 'Spearman ρ')
+    cor_name <- expression("Pearson"~r,"Kendall"~tau,"Spearman"~rho)[c('pearson', 'kendall', 'spearman') == cor.method]
 
-  g <- ggplot(cor_df, aes_string(x='section1', y='section2', fill='value')) +
-    geom_raster() +
-    scale_fill_gradientn(colors=rgb.tables(10), name=cor_name) +
-    labs(x='', y='') +
-    theme(axis.line=element_blank(),
-          axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
-          axis.ticks=element_blank(),
-          panel.background=element_blank())
+    g <- ggplot(cor_df, aes_string(x='section1', y='section2', fill='value')) +
+        geom_raster() +
+        scale_fill_gradientn(colors=rgb.tables(10), name=cor_name) +
+        labs(x='', y='') +
+        theme(axis.line=element_blank(),
+              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
+              axis.ticks=element_blank(),
+              panel.background=element_blank())
 
-  return(g)
+    return(g)
 }
 
 #' Correlation heatmap of genes
@@ -409,53 +409,53 @@ CorHeatmap <- function(object, matrix='scaled', max.cor=0.5, cor.method='pearson
 #'  gene=c("ENSDARG00000002131", "ENSDARG00000003061", "ENSDARG00000076075", "ENSDARG00000076850")))
 GeneCorHeatmap <- function(object, gene.df, group='center', matrix='scaled', size=5, cor.method='pearson')
 {
-  exp_matrix <- GetMatrix(object, matrix=matrix)
-  genes <- as.character(gene.df$gene)
-  cor_matrix <- cor(t(exp_matrix[genes, ]), method=cor.method)
-  cor_df <- melt(cor_matrix, varnames=c('gene1', 'gene2'))
-  cor_name <- expression("Pearson"~r,"Kendall"~tau,"Spearman"~rho)[c('pearson', 'kendall', 'spearman') == cor.method]
-  # plot sidebar if genes are grouped
-  plot_sidebar <- group %in% names(gene.df)
+    exp_matrix <- GetMatrix(object, matrix=matrix)
+    genes <- as.character(gene.df$gene)
+    cor_matrix <- cor(t(exp_matrix[genes, ]), method=cor.method)
+    cor_df <- melt(cor_matrix, varnames=c('gene1', 'gene2'))
+    cor_name <- expression("Pearson"~r,"Kendall"~tau,"Spearman"~rho)[c('pearson', 'kendall', 'spearman') == cor.method]
+    # plot sidebar if genes are grouped
+    plot_sidebar <- group %in% names(gene.df)
 
-  if(plot_sidebar)
-  {
-    group_genes <- gene.df[[group]]
-    names(group_genes) <- gene.df$gene
-    cor_df$group <- as.factor(group_genes[cor_df$gene1])
-    # Colors for column side bar
-    n_groups <- length(unique(group_genes))
-    color_legend <- rainbow(n_groups)
-    names(color_legend) <- unique(group_genes)
-  }
+    if(plot_sidebar)
+    {
+        group_genes <- gene.df[[group]]
+        names(group_genes) <- gene.df$gene
+        cor_df$group <- as.factor(group_genes[cor_df$gene1])
+        # Colors for column side bar
+        n_groups <- length(unique(group_genes))
+        color_legend <- rainbow(n_groups)
+        names(color_legend) <- unique(group_genes)
+    }
 
-  g <- ggplot(cor_df, aes_string(x='gene1', y='gene2', fill='value')) +
-    geom_raster() +
-    scale_fill_gradientn(colors=rgb.tables(10), name=cor_name)  +
-    labs(x='', y='') +
-    theme(axis.line=element_blank(),
-          axis.text.y=element_blank(),
-          axis.ticks=element_blank(),
-          panel.background=element_blank(),
-          legend.key=element_blank(),
-          legend.box='horizontal')
-  if(size == 0)
-    g <- g + theme(axis.text.x=element_blank())
-  else
-    g <- g + theme(axis.text.x=element_text(angle=90, hjust=1, size=size))
+    g <- ggplot(cor_df, aes_string(x='gene1', y='gene2', fill='value')) +
+        geom_raster() +
+        scale_fill_gradientn(colors=rgb.tables(10), name=cor_name)  +
+        labs(x='', y='') +
+        theme(axis.line=element_blank(),
+              axis.text.y=element_blank(),
+              axis.ticks=element_blank(),
+              panel.background=element_blank(),
+              legend.key=element_blank(),
+              legend.box='horizontal')
+    if(size == 0)
+        g <- g + theme(axis.text.x=element_blank())
+    else
+        g <- g + theme(axis.text.x=element_text(angle=90, hjust=1, size=size))
 
-  if(plot_sidebar)
-  {
-    gbuild <- ggplot_build(plot = g)
-    y_range <- diff(x = gbuild$layout$panel_params[[1]]$y.range)
-    y_min <- max(gbuild$layout$panel_params[[1]]$y.range) + 0.01 * y_range
-    y_max <- y_min + 0.03 * y_range
+    if(plot_sidebar)
+    {
+        gbuild <- ggplot_build(plot = g)
+        y_range <- diff(x = gbuild$layout$panel_params[[1]]$y.range)
+        y_min <- max(gbuild$layout$panel_params[[1]]$y.range) + 0.01 * y_range
+        y_max <- y_min + 0.03 * y_range
 
-    g <- g + geom_point(aes_string(color='group'), alpha=0, shape=15, size=5) +
-      scale_color_manual(name=group, values=color_legend)  +
-      guides(color=guide_legend(override.aes=list(alpha=1))) +
-      annotation_raster(t(color_legend[as.character(group_genes)]), -Inf, Inf, ymin=y_min, ymax=y_max) +
-      coord_cartesian(ylim = c(0, y_max), clip='off')
-  }
+        g <- g + geom_point(aes_string(color='group'), alpha=0, shape=15, size=5) +
+            scale_color_manual(name=group, values=color_legend)  +
+            guides(color=guide_legend(override.aes=list(alpha=1))) +
+            annotation_raster(t(color_legend[as.character(group_genes)]), -Inf, Inf, ymin=y_min, ymax=y_max) +
+            coord_cartesian(ylim = c(0, y_max), clip='off')
+    }
 
-  return(g)
+    return(g)
 }

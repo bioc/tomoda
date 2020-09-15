@@ -4,7 +4,7 @@
 \alias{ExpHeatmap}
 \title{Expression heatmap}
 \usage{
-ExpHeatmap(object, genes, matrix = "scaled", size = 8)
+ExpHeatmap(object, genes, matrix = "scaled", size = 5)
 }
 \arguments{
 \item{object}{A \code{SummarizedExperiment} object.}

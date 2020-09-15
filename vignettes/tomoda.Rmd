@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 ## Background
 The tomo-seq technique is based on cryosectioning of tissue and performing RNA-seq on consecutive sections. Unlike common RNA-seq which is performed on independent samples, tomo-seq is performed on consecutive sections from one sample. Therefore tomo-seq data contain spatial information of transcriptome, and it is a good approach to examine gene expression change across a anatomic region.
 
-This vignette will demonstrate the workflow to analyze and visualize tomo-seq data using `r Githubpkg("liuwd15/tomoda")`. 
+This vignette will demonstrate the workflow to analyze and visualize tomo-seq data using `r Githubpkg("liuwd15/tomoda")`. The main purpose of the package it to find anatomic zones with similar transcriptional profiles and spatially expressed genes in a tomo-seq sample. Several visulization functions create easy-to-modify plots are available to help users do this.
 
 At the beginning, we load necessary libraries .
 ```{r setup, message=FALSE}

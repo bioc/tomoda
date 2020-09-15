@@ -21,51 +21,51 @@
 #' zh <- CreateTomo(zh.data)
 CreateTomo <- function(matrix.count=NULL, matrix.normalized=NULL, min.section=3)
 {
-  available.count <- !is.null(matrix.count)
-  available.normalized <- !is.null(matrix.normalized)
+    available.count <- !is.null(matrix.count)
+    available.normalized <- !is.null(matrix.normalized)
 
-  if(!available.count & !available.normalized)
-  {
-    print('Please input at least one of raw read count matrix and normalized count matrix!\n')
-    return()
-  }
-  else if(available.count & available.normalized)
-  {
-    good_gene <- apply(matrix.normalized>0, 1, sum) >= min.section
-    matrix.count <- as.matrix(matrix.count[good_gene,])
-    matrix.normalized <- as.matrix(matrix.normalized[good_gene,])
-    section <- colnames(matrix.count)
-    if(is.null(section))
-      section <- as.character(1:ncol(matrix.count))
+    if(!available.count & !available.normalized)
+    {
+        print('Please input at least one of raw read count matrix and normalized count matrix!\n')
+        return()
+    }
+    else if(available.count & available.normalized)
+    {
+        good_gene <- apply(matrix.normalized>0, 1, sum) >= min.section
+        matrix.count <- as.matrix(matrix.count[good_gene,])
+        matrix.normalized <- as.matrix(matrix.normalized[good_gene,])
+        section <- colnames(matrix.count)
+        if(is.null(section))
+            section <- as.character(seq_len(ncol(matrix.count)))
 
-    col_data <- data.frame(section=section, stringsAsFactors=FALSE)
-    row_data <- data.frame(gene=rownames(matrix.count), stringsAsFactors=FALSE)
-    tomo_object <- SummarizedExperiment(assays=list(count=matrix.count, normalized=matrix.normalized), colData=col_data, rowData=row_data)
-  }
-  else if(available.count)
-  {
-    good_gene <- apply(matrix.count>0, 1, sum) >= min.section
-    matrix.count <- as.matrix(matrix.count[good_gene,])
-    section <- colnames(matrix.count)
-    if(is.null(section))
-      section <- as.character(1:ncol(matrix.count))
-    col_data <- data.frame(section=section, stringsAsFactors=FALSE)
-    row_data <- data.frame(gene=rownames(matrix.count), stringsAsFactors=FALSE)
-    tomo_object <- SummarizedExperiment(assays=list(count=matrix.count), colData=col_data, rowData=row_data)
-  }
-  else
-  {
-    good_gene <- apply(matrix.normalized>0, 1, sum) >= min.section
-    matrix.normalized <- as.matrix(matrix.normalized[good_gene,])
-    section <- colnames(matrix.count)
-    if(is.null(section))
-      section <- as.character(1:ncol(matrix.normalized))
-    col_data <- data.frame(section=section, stringsAsFactors=FALSE)
-    row_data <- data.frame(gene=rownames(matrix.normalized), stringsAsFactors=FALSE)
-    tomo_object <- SummarizedExperiment(assays=list(normalized=matrix.normalized), colData=col_data, rowData=row_data)
-  }
+        col_data <- data.frame(section=section, stringsAsFactors=FALSE)
+        row_data <- data.frame(gene=rownames(matrix.count), stringsAsFactors=FALSE)
+        tomo_object <- SummarizedExperiment(assays=list(count=matrix.count, normalized=matrix.normalized), colData=col_data, rowData=row_data)
+    }
+    else if(available.count)
+    {
+        good_gene <- apply(matrix.count>0, 1, sum) >= min.section
+        matrix.count <- as.matrix(matrix.count[good_gene,])
+        section <- colnames(matrix.count)
+        if(is.null(section))
+            section <- as.character(seq_len(ncol(matrix.count)))
+        col_data <- data.frame(section=section, stringsAsFactors=FALSE)
+        row_data <- data.frame(gene=rownames(matrix.count), stringsAsFactors=FALSE)
+        tomo_object <- SummarizedExperiment(assays=list(count=matrix.count), colData=col_data, rowData=row_data)
+    }
+    else
+    {
+        good_gene <- apply(matrix.normalized>0, 1, sum) >= min.section
+        matrix.normalized <- as.matrix(matrix.normalized[good_gene,])
+        section <- colnames(matrix.count)
+        if(is.null(section))
+            section <- as.character(seq_len(ncol(matrix.normalized)))
+        col_data <- data.frame(section=section, stringsAsFactors=FALSE)
+        row_data <- data.frame(gene=rownames(matrix.normalized), stringsAsFactors=FALSE)
+        tomo_object <- SummarizedExperiment(assays=list(normalized=matrix.normalized), colData=col_data, rowData=row_data)
+    }
 
-  return(tomo_object)
+    return(tomo_object)
 }
 
 setGeneric("Normalize",function(object, ...) standardGeneric("Normalize"))

@@ -20,15 +20,15 @@
 #' zh <- Normalize(zh)
 Normalize <- function(object)
 {
-  if("normalized" %in% names(assays(object)))
-    cat('Normalized data already exists!')
-  else
-  {
-    library_size <- apply(assays(object)$count, 2, sum)
-    assays(object)$normalized <- apply(assays(object)$count, 2, function(x) x * median(library_size) / sum(x))
-    cat("Normalized count matrix is saved in assay 'normalized'.\n")
-  }
-  return(object)
+    if("normalized" %in% names(assays(object)))
+        cat('Normalized data already exist!')
+    else
+    {
+        library_size <- apply(assays(object)$count, 2, sum)
+        assays(object)$normalized <- apply(assays(object)$count, 2, function(x) x * median(library_size) / sum(x))
+        cat("Normalized count matrix is saved in assay 'normalized'.\n")
+    }
+    return(object)
 }
 
 #' Scale data
@@ -53,16 +53,16 @@ Normalize <- function(object)
 #' zh <- Scale(zh)
 Scale <- function(object)
 {
-  if(!"normalized" %in% names(assays(object)))
-    cat("Normalized data does not exist! Please run function 'Normalize' before scaling data.\n")
-  else
-  {
-    mean_normalized <- apply(assays(object)$normalized, 1, mean)
-    sd_normalized <- apply(assays(object)$normalized, 1, sd)
-    assays(object)$scaled <- (assays(object)$normalized - mean_normalized) / sd_normalized
-    cat("Scaled count matrix is saved in assay 'scaled'.\n")
-  }
-  return(object)
+    if(!"normalized" %in% names(assays(object)))
+        cat("Normalized data does not exist! Please run function 'Normalize' before scaling data.\n")
+    else
+    {
+        mean_normalized <- apply(assays(object)$normalized, 1, mean)
+        sd_normalized <- apply(assays(object)$normalized, 1, sd)
+        assays(object)$scaled <- (assays(object)$normalized - mean_normalized) / sd_normalized
+        cat("Scaled count matrix is saved in assay 'scaled'.\n")
+    }
+    return(object)
 }
 
 #' Get a matrix from \code{SummarizedExperiment} object
@@ -93,44 +93,44 @@ Scale <- function(object)
 #' matrix_scaled <- GetMatrix(zh, "scaled")
 GetMatrix <- function(object, matrix)
 {
-  if(matrix == 'count')
-  {
-    if("count" %in% names(assays(object)))
-      return(assays(object)$count)
+    if(matrix == 'count')
+    {
+        if("count" %in% names(assays(object)))
+            return(assays(object)$count)
+        else
+        {
+            cat('Count matrix does not exist!\n')
+            return(NULL)
+        }
+    }
+
+    else if(matrix == 'normalized')
+    {
+        if("normalized" %in% names(assays(object)))
+            return(assays(object)$normalized)
+        else
+        {
+            cat('Normalized count matrix does not exist!\n')
+            return(NULL)
+        }
+    }
+
+    else if(matrix == 'scaled')
+    {
+        if("scaled" %in% names(assays(object)))
+            return(assays(object)$scaled)
+        else
+        {
+            cat('Scaled count matrix does not exist!\n')
+            return(NULL)
+        }
+    }
+
     else
     {
-      cat('Count matrix does not exist!\n')
-      return(NULL)
+        cat('Unknown matrix', matrix,'. Please input correct name.\n')
+        return(NULL)
     }
-  }
-
-  else if(matrix == 'normalized')
-  {
-    if("normalized" %in% names(assays(object)))
-      return(assays(object)$normalized)
-    else
-    {
-      cat('Normalized count matrix does not exist!\n')
-      return(NULL)
-    }
-  }
-
-  else if(matrix == 'scaled')
-  {
-    if("scaled" %in% names(assays(object)))
-      return(assays(object)$scaled)
-    else
-    {
-      cat('Scaled count matrix does not exist!\n')
-      return(NULL)
-    }
-  }
-
-  else
-  {
-    cat('Unknown matrix', matrix,'. Please input correct name.\n')
-    return(NULL)
-  }
 }
 
 #' Hierarchical clustering across sections
@@ -163,12 +163,12 @@ GetMatrix <- function(object, matrix)
 #' # (Not recommended) Use scaled read counts to calculate distance
 #' zh <- Scale(zh)
 #' hclust_zh <- HClust(zh, matrix="scaled")
-HClust <-  function(object, matrix='normalized', measure='euclidean', p=2, agglomeration='complete')
+HClust <- function(object, matrix='normalized', measure='euclidean', p=2, agglomeration='complete')
 {
-  exp_matrix <- t(GetMatrix(object, matrix))
-  dist_section <- dist(exp_matrix, method=measure, p)
-  hclust_section <- hclust(dist_section, method=agglomeration)
-  return(hclust_section)
+    exp_matrix <- t(GetMatrix(object, matrix))
+    dist_section <- dist(exp_matrix, method=measure, p)
+    hclust_section <- hclust(dist_section, method=agglomeration)
+    return(hclust_section)
 }
 
 #' K-Means clustering across sections
@@ -199,19 +199,19 @@ HClust <-  function(object, matrix='normalized', measure='euclidean', p=2, agglo
 #' zh <- KMeans(zh, 3, matrix="scaled")
 KMeans <- function(object, centers, matrix='normalized', ...)
 {
-  exp_matrix <- t(GetMatrix(object, matrix))
-  kmeans_section <- kmeans(exp_matrix,centers=centers, ...)
-  percent_between <- kmeans_section$betweenss / kmeans_section$totss
-  colData(object)$kmeans_cluster <- kmeans_section$cluster
+    exp_matrix <- t(GetMatrix(object, matrix))
+    kmeans_section <- kmeans(exp_matrix,centers=centers, ...)
+    percent_between <- kmeans_section$betweenss / kmeans_section$totss
+    colData(object)$kmeans_cluster <- kmeans_section$cluster
 
-  cluster_list <- list()
-  for(i in 1:centers)
-    cluster_list[[i]] <- as.character(colData(object)$section)[kmeans_section$cluster == i]
+    cluster_list <- list()
+    for(i in seq_len(centers))
+        cluster_list[[i]] <- as.character(colData(object)$section)[kmeans_section$cluster == i]
 
-  cat("KMeans results:\n")
-  print(cluster_list)
-  cat("between_SS / total_SS =", percent_between,'\n')
-  return(object)
+    cat("KMeans results:\n")
+    print(cluster_list)
+    cat("between_SS / total_SS =", percent_between,'\n')
+    return(object)
 }
 
 #' Find peak in a vector
@@ -236,26 +236,26 @@ KMeans <- function(object, centers, matrix='normalized', ...)
 #' FindPeak(rnorm(10), threshold=3, length=3)
 FindPeak <- function(x, threshold=1, length=4)
 {
-  gt_threshold <- x > threshold
-  consecutive <- rep(0, length(x) + 1)
+    gt_threshold <- x > threshold
+    consecutive <- rep(0, length(x) + 1)
 
-  for(i in 1:length(x) )
-  {
-    if(gt_threshold[i])
+    for(i in seq_len(length(x)))
     {
-      consecutive[i+1] <- consecutive[i] + 1
+        if(gt_threshold[i])
+        {
+            consecutive[i+1] <- consecutive[i] + 1
+        }
     }
-  }
-  if(all(consecutive < length))
-  {
-    return(c(0, 0))
-  }
-  else
-  {
-    peak_end <- which.max(consecutive)
-    peak_start <- peak_end - consecutive[peak_end]
-    return(c(peak_start, peak_end - 1) )
-  }
+    if(all(consecutive < length))
+    {
+        return(c(0, 0))
+    }
+    else
+    {
+        peak_end <- which.max(consecutive)
+        peak_start <- peak_end - consecutive[peak_end]
+        return(c(peak_start, peak_end - 1) )
+    }
 }
 
 #' Find peak genes
@@ -306,63 +306,63 @@ FindPeak <- function(x, threshold=1, length=4)
 #' peak_genes <- FindPeakGene(zh, nperm=0)
 FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
 {
-  if(!"scaled" %in% names(assays(object)))
-  {
-    cat("Scaled data does not exist! Please run function 'Scale' before finding peak genes.\n")
-    return()
-  }
-  else
-  {
-    scaled <- assays(object)$scaled
-    peak_position <- apply(scaled, 1, FindPeak, threshold, length)
-    peak_exist <- peak_position[1,] != 0
-    if(!any(peak_exist))
+    if(!"scaled" %in% names(assays(object)))
     {
-      cat("No peak gene is found!\n")
-      return()
+        cat("Scaled data does not exist! Please run function 'Scale' before finding peak genes.\n")
+        return()
     }
-
-    peak_genes <- rowData(object)$gene[peak_exist]
-    peak_gene_df <- data.frame(gene=peak_genes,
-                               start=peak_position[1,peak_exist],
-                               end=peak_position[2,peak_exist],
-                               center=floor(apply(peak_position[,peak_exist], 2, mean)),
-                               stringsAsFactors=FALSE)
-
-    # Using permutation to calculate p-values
-    if(nperm > 0)
+    else
     {
-      pvals <- NULL
-      n_section <- nrow(object)
-      saved_pvals <- rep(NA, n_section)
-      #saved_pvals[length] <- (n_section - length + 1) / choose(n_section, length)
-      for(gene in peak_genes)
-      {
-        exp_gene <- scaled[gene, ]
-        n_gt_threshold <- sum(exp_gene > threshold)
-        if(is.na(saved_pvals[n_gt_threshold]))
+        scaled <- assays(object)$scaled
+        peak_position <- apply(scaled, 1, FindPeak, threshold, length)
+        peak_exist <- peak_position[1,] != 0
+        if(!any(peak_exist))
         {
-          n_peak <- 0
-          for(i in 1:nperm)
-            n_peak <- n_peak + (FindPeak(sample(exp_gene))[1] > 0)
-          pval <- n_peak / nperm
-          saved_pvals[n_gt_threshold] <- pval
+            cat("No peak gene is found!\n")
+            return()
         }
-        else
-        {
-          pval <- saved_pvals[n_gt_threshold]
-        }
-        pvals <- c(pvals, pval)
-      }
 
-      peak_gene_df$p=pvals
-      peak_gene_df$p.adj=p.adjust(pvals, method=method)
+        peak_genes <- rowData(object)$gene[peak_exist]
+        peak_gene_df <- data.frame(gene=peak_genes,
+                                   start=peak_position[1,peak_exist],
+                                   end=peak_position[2,peak_exist],
+                                   center=floor(apply(peak_position[,peak_exist], 2, mean)),
+                                   stringsAsFactors=FALSE)
+
+        # Using permutation to calculate p-values
+        if(nperm > 0)
+        {
+            pvals <- NULL
+            n_section <- nrow(object)
+            saved_pvals <- rep(NA, n_section)
+            #saved_pvals[length] <- (n_section - length + 1) / choose(n_section, length)
+            for(gene in peak_genes)
+            {
+                exp_gene <- scaled[gene, ]
+                n_gt_threshold <- sum(exp_gene > threshold)
+                if(is.na(saved_pvals[n_gt_threshold]))
+                {
+                    n_peak <- 0
+                    for(i in seq_len(nperm))
+                        n_peak <- n_peak + (FindPeak(sample(exp_gene))[1] > 0)
+                    pval <- n_peak / nperm
+                    saved_pvals[n_gt_threshold] <- pval
+                }
+                else
+                {
+                    pval <- saved_pvals[n_gt_threshold]
+                }
+                pvals <- c(pvals, pval)
+            }
+
+            peak_gene_df$p=pvals
+            peak_gene_df$p.adj=p.adjust(pvals, method=method)
+        }
+
+        sorted_df <- peak_gene_df[order(peak_gene_df$start, peak_gene_df$end), ]
+        cat(nrow(sorted_df), "peak genes (spatially upregulated genes) are found!\n")
+        return(sorted_df)
     }
-
-    sorted_df <- peak_gene_df[order(peak_gene_df$start, peak_gene_df$end), ]
-    cat(nrow(sorted_df), "peak genes (spatially upregulated genes) are found!\n")
-    return(sorted_df)
-  }
 }
 
 #' Perform PCA
@@ -399,36 +399,36 @@ FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
 #' zh <- PCA(zh, genes=rownames(zh)[1:100])
 PCA <- function(object, genes=NA, scree=FALSE, ...)
 {
-  if(all(is.na(genes)))
-  {
-    pca_result <- prcomp(assays(object)$normalized, ...)
-    colData(object)$PC1 <- pca_result$rotation[,1]
-    colData(object)$PC2 <- pca_result$rotation[,2]
-    cat("PC embeddings for sections are saved in column data.\n")
-  }
-  else
-  {
-    exp_matrix <- assays(object)$scaled[genes, ]
-    pca_result <- prcomp(t(exp_matrix))
-    pc1 <- pca_result$rotation[,1]
-    pc2 <- pca_result$rotation[,2]
-    rowData(object)$PC1 <- NA
-    rowData(object)$PC2 <- NA
-    rowData(object)[genes, 'PC1'] <- pc1
-    rowData(object)[genes, 'PC2'] <- pc2
-    cat("PC embeddings for genes are saved in row data.\n")
-  }
+    if(all(is.na(genes)))
+    {
+        pca_result <- prcomp(assays(object)$normalized, ...)
+        colData(object)$PC1 <- pca_result$rotation[,1]
+        colData(object)$PC2 <- pca_result$rotation[,2]
+        cat("PC embeddings for sections are saved in column data.\n")
+    }
+    else
+    {
+        exp_matrix <- assays(object)$scaled[genes, ]
+        pca_result <- prcomp(t(exp_matrix))
+        pc1 <- pca_result$rotation[,1]
+        pc2 <- pca_result$rotation[,2]
+        rowData(object)$PC1 <- NA
+        rowData(object)$PC2 <- NA
+        rowData(object)[genes, 'PC1'] <- pc1
+        rowData(object)[genes, 'PC2'] <- pc2
+        cat("PC embeddings for genes are saved in row data.\n")
+    }
 
-  if(scree)
-  {
-    pca_sd <- data.frame(pc=1:length(pca_result$sdev), sd=pca_result$sdev)
-    g <- ggplot(pca_sd, aes_string(x='pc', y='sd')) +
-      geom_point() +
-      labs(x='PC', y='Standard deviation') +
-      theme_bw()
-    print(g)
-  }
-  return(object)
+    if(scree)
+    {
+        pca_sd <- data.frame(pc=seq_len(length(pca_result$sdev)), sd=pca_result$sdev)
+        g <- ggplot(pca_sd, aes_string(x='pc', y='sd')) +
+            geom_point() +
+            labs(x='PC', y='Standard deviation') +
+            theme_bw()
+        print(g)
+    }
+    return(object)
 }
 
 #' Perform TSNE
@@ -464,32 +464,30 @@ PCA <- function(object, genes=NA, scree=FALSE, ...)
 #' zh <- TSNE(zh, genes=rownames(zh)[1:100])
 TSNE <- function(object, genes=NA, perplexity=NA, ...)
 {
-  if(all(is.na(genes)))
-  {
-    if(is.na(perplexity))
-      perplexity <- (ncol(object) - 1) / 4
-    tsne_result <- Rtsne(t(assays(object)$normalized), perplexity=perplexity, ...)
-    colData(object)$TSNE1 <- tsne_result$Y[,1]
-    colData(object)$TSNE2 <- tsne_result$Y[,2]
-    cat("TSNE embeddings for sections are saved in column data.\n")
-  }
-  else
-  {
-    if(is.na(perplexity))
-      perplexity <- (length(genes) - 1) / 4
-    exp_matrix <- assays(object)$scaled[genes, ]
-    tsne_result <- Rtsne(exp_matrix, perplexity=perplexity, ...)
-    tsne1 <- tsne_result$Y[,1]
-    tsne2 <- tsne_result$Y[,2]
-    #names(tsne1) <- rownames(exp_matrix)
-    #names(tsne2) <- rownames(exp_matrix)
-    rowData(object)$TSNE1 <- NA
-    rowData(object)$TSNE2 <- NA
-    rowData(object)[genes, 'TSNE1'] <- tsne1
-    rowData(object)[genes, 'TSNE2'] <- tsne2
-    cat("TSNE embeddings for genes are saved in row data.\n")
-  }
-  return(object)
+    if(all(is.na(genes)))
+    {
+        if(is.na(perplexity))
+            perplexity <- (ncol(object) - 1) / 4
+        tsne_result <- Rtsne(t(assays(object)$normalized), perplexity=perplexity, ...)
+        colData(object)$TSNE1 <- tsne_result$Y[,1]
+        colData(object)$TSNE2 <- tsne_result$Y[,2]
+        cat("TSNE embeddings for sections are saved in column data.\n")
+    }
+    else
+    {
+        if(is.na(perplexity))
+            perplexity <- (length(genes) - 1) / 4
+        exp_matrix <- assays(object)$scaled[genes, ]
+        tsne_result <- Rtsne(exp_matrix, perplexity=perplexity, ...)
+        tsne1 <- tsne_result$Y[,1]
+        tsne2 <- tsne_result$Y[,2]
+        rowData(object)$TSNE1 <- NA
+        rowData(object)$TSNE2 <- NA
+        rowData(object)[genes, 'TSNE1'] <- tsne1
+        rowData(object)[genes, 'TSNE2'] <- tsne2
+        cat("TSNE embeddings for genes are saved in row data.\n")
+    }
+    return(object)
 }
 
 #' Perform UMAP
@@ -521,26 +519,24 @@ TSNE <- function(object, genes=NA, perplexity=NA, ...)
 #' zh <- UMAP(zh, genes=rownames(zh)[1:100])
 UMAP <- function(object, genes=NA, ...)
 {
-  if(all(is.na(genes)))
-  {
-    umap_result <- umap(t(assays(object)$normalized), ...)
-    colData(object)$UMAP1 <- umap_result$layout[,1]
-    colData(object)$UMAP2 <- umap_result$layout[,2]
-    cat("UMAP embeddings for sections are saved in column data.\n")
-  }
-  else
-  {
-    exp_matrix <- assays(object)$scaled[genes, ]
-    umap_result <- umap(exp_matrix, ...)
-    umap1 <- umap_result$layout[,1]
-    umap2 <- umap_result$layout[,2]
-    #names(umap1) <- rownames(exp_matrix)
-    #names(umap2) <- rownames(exp_matrix)
-    rowData(object)$UMAP1 <- NA
-    rowData(object)$UMAP2 <- NA
-    rowData(object)[genes, 'UMAP1'] <- umap1
-    rowData(object)[genes, 'UMAP2'] <- umap2
-    cat("UMAP embeddings for genes are saved in row data.\n")
-  }
-  return(object)
+    if(all(is.na(genes)))
+    {
+        umap_result <- umap(t(assays(object)$normalized), ...)
+        colData(object)$UMAP1 <- umap_result$layout[,1]
+        colData(object)$UMAP2 <- umap_result$layout[,2]
+        cat("UMAP embeddings for sections are saved in column data.\n")
+    }
+    else
+    {
+        exp_matrix <- assays(object)$scaled[genes, ]
+        umap_result <- umap(exp_matrix, ...)
+        umap1 <- umap_result$layout[,1]
+        umap2 <- umap_result$layout[,2]
+        rowData(object)$UMAP1 <- NA
+        rowData(object)$UMAP2 <- NA
+        rowData(object)[genes, 'UMAP1'] <- umap1
+        rowData(object)[genes, 'UMAP2'] <- umap2
+        cat("UMAP embeddings for genes are saved in row data.\n")
+    }
+    return(object)
 }
