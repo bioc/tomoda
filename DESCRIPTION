@@ -8,10 +8,10 @@ Authors@R:
            email = "liuwd15@tsinghua.org.cn",
 		   comment = c(ORCID = "0000-0002-5124-9338"))
 Description: This package provides many easy-to-use methods to analyze and 
-	visualize tomo-seq data. The main purpose of the package it to find zones
+	visualize tomo-seq data. The main purpose of the package is to find zones
 	with similar transcriptional profiles and spatially expressed genes in a 
-	tomo-seq sample. Several visulization functions create easy-to-modify plots
-	are available to help users do this.
+	tomo-seq sample. Several visulization functions are available to create
+	high quality and easy-to-modify plots.
 Depends: R (>= 4.0.0)
 Imports:
 	methods,
