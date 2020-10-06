@@ -3,30 +3,36 @@
 #' Normalize the raw read count in a \code{SummarizedExperiment} object.
 #'
 #' @param object A \code{SummarizedExperiment} object.
+#' @param method Character, must be one of \code{"median"}, or \code{"cpm"}.
 #'
 #' @details This function should be run for \code{SummarizedExperiment} object created from raw read count matrix.
 #' If the \code{SummarizedExperiment} object already has a normalized count matrix. The function simply return the original object.
-#' Library sizes of all sections are normalized to the median library size.
+#' Library sizes of all sections are normalized to the median library size (method='median') or one million (method='cpm').
 #'
 #' @return A \code{SummarizedExperiment} object with normalized read count matrix saved in assay \code{'normalized'}.
 #'
 #' @importFrom stats median
-#' @importFrom SummarizedExperiment assays assays<-
+#' @importFrom SummarizedExperiment assayNames assay assay<-
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-Normalize <- function(object)
+#' zh <- createTomo(zh.data, normalize=FALSE)
+#' zh <- normalizeTomo(zh)
+normalizeTomo <- function(object, method='median')
 {
-    if("normalized" %in% names(assays(object)))
-        cat('Normalized data already exist!')
+    if("normalized" %in% assayNames(object))
+        message('Normalized data already exist!')
     else
     {
-        library_size <- apply(assays(object)$count, 2, sum)
-        assays(object)$normalized <- apply(assays(object)$count, 2, function(x) x * median(library_size) / sum(x))
-        cat("Normalized count matrix is saved in assay 'normalized'.\n")
+        library_size <- apply(assay(object, 'count'), 2, sum)
+        target_library_size <- ifelse(method=='cpm', 1e6, median(library_size))
+        if(!method %in% c('median',' cpm'))
+            message('Unknown normalization method. Using median library size.')
+        assay(object, 'normalized') <- apply(assay(object, 'count'), 2,
+                                           function(x) x * target_library_size / sum(x))
+
+        message("Normalized count matrix is saved in assay 'normalized'.\n")
     }
     return(object)
 }
@@ -43,94 +49,25 @@ Normalize <- function(object)
 #' @return A \code{SummarizedExperiment} object with scaled read count matrix saved in assay \code{'scaled'}.
 #'
 #' @importFrom stats sd
-#' @importFrom SummarizedExperiment assays assays<-
+#' @importFrom SummarizedExperiment assayNames assay assay<-
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
-Scale <- function(object)
+#' zh <- createTomo(zh.data, scale=FALSE)
+#' zh <- scaleTomo(zh)
+scaleTomo <- function(object)
 {
-    if(!"normalized" %in% names(assays(object)))
-        cat("Normalized data does not exist! Please run function 'Normalize' before scaling data.\n")
+    if(!"normalized" %in% assayNames(object))
+        message("Normalized data does not exist! Please run function 'normalizeTomo' before scaling data.\n")
     else
     {
-        mean_normalized <- apply(assays(object)$normalized, 1, mean)
-        sd_normalized <- apply(assays(object)$normalized, 1, sd)
-        assays(object)$scaled <- (assays(object)$normalized - mean_normalized) / sd_normalized
-        cat("Scaled count matrix is saved in assay 'scaled'.\n")
+        mean_normalized <- apply(assay(object, 'normalized'), 1, mean)
+        sd_normalized <- apply(assay(object, 'normalized'), 1, sd)
+        assay(object, 'scaled') <- (assay(object, 'normalized') - mean_normalized) / sd_normalized
+        message("Scaled count matrix is saved in assay 'scaled'.\n")
     }
     return(object)
-}
-
-#' Get a matrix from \code{SummarizedExperiment} object
-#'
-#' Get one of three stored matrics, \code{count}, \code{normalized}, or \code{scaled}, in a \code{SummarizedExperiment} object.
-#'
-#' @param object A \code{SummarizedExperiment} object.
-#' @param matrix Character, must be one of \code{"count"}, \code{"normalized"}, or \code{"scaled"}.
-#'
-#' @return A numeric matrix. Returns \code{NA} if such matrix does not exist.
-#'
-#' @importFrom SummarizedExperiment assays
-#' @export
-#'
-#' @examples
-#' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#'
-#' # Get the raw read count matrix.
-#' matrix_count <- GetMatrix(zh, "count")
-#'
-#' # Get the normalized read count matrix.
-#' zh <- Normalize(zh)
-#' matrix_normalized <- GetMatrix(zh, "normalized")
-#'
-#' # Get the scaled read count matrix.
-#' zh <- Scale(zh)
-#' matrix_scaled <- GetMatrix(zh, "scaled")
-GetMatrix <- function(object, matrix)
-{
-    if(matrix == 'count')
-    {
-        if("count" %in% names(assays(object)))
-            return(assays(object)$count)
-        else
-        {
-            cat('Count matrix does not exist!\n')
-            return(NULL)
-        }
-    }
-
-    else if(matrix == 'normalized')
-    {
-        if("normalized" %in% names(assays(object)))
-            return(assays(object)$normalized)
-        else
-        {
-            cat('Normalized count matrix does not exist!\n')
-            return(NULL)
-        }
-    }
-
-    else if(matrix == 'scaled')
-    {
-        if("scaled" %in% names(assays(object)))
-            return(assays(object)$scaled)
-        else
-        {
-            cat('Scaled count matrix does not exist!\n')
-            return(NULL)
-        }
-    }
-
-    else
-    {
-        cat('Unknown matrix', matrix,'. Please input correct name.\n')
-        return(NULL)
-    }
 }
 
 #' Hierarchical clustering across sections
@@ -152,20 +89,19 @@ GetMatrix <- function(object, matrix)
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' hclust_zh <- HClust(zh)
+#' zh <- createTomo(zh.data)
+#' hclust_zh <- hierarchClust(zh)
 #' plot(hclust_zh)
 #'
 #' # Use other agglomeration method
-#' hclust_zh <- HClust(zh, agglomeration="average")
+#' hclust_zh <- hierarchClust(zh, agglomeration="average")
 #'
 #' # (Not recommended) Use scaled read counts to calculate distance
-#' zh <- Scale(zh)
-#' hclust_zh <- HClust(zh, matrix="scaled")
-HClust <- function(object, matrix='normalized', measure='euclidean', p=2, agglomeration='complete')
+#' zh <- scaleTomo(zh)
+#' hclust_zh <- hierarchClust(zh, matrix="scaled")
+hierarchClust <- function(object, matrix='normalized', measure='euclidean', p=2, agglomeration='complete')
 {
-    exp_matrix <- t(GetMatrix(object, matrix))
+    exp_matrix <- t(assay(object, matrix))
     dist_section <- dist(exp_matrix, method=measure, p)
     hclust_section <- hclust(dist_section, method=agglomeration)
     return(hclust_section)
@@ -185,21 +121,20 @@ HClust <- function(object, matrix='normalized', measure='euclidean', p=2, agglom
 #' @seealso \code{\link[stats]{kmeans}} for performing K-Means clustering on a matrix.
 #'
 #' @importFrom stats kmeans
-#' @importFrom SummarizedExperiment colData colData<-
+#' @importFrom SummarizedExperiment assay colData colData<-
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- KMeans(zh, 3)
+#' zh <- createTomo(zh.data)
+#' zh <- kmeansClust(zh, 3)
 #'
 #' # Use scaled read counts to calculate distance
-#' zh <- Scale(zh)
-#' zh <- KMeans(zh, 3, matrix="scaled")
-KMeans <- function(object, centers, matrix='normalized', ...)
+#' zh <- scaleTomo(zh)
+#' zh <- kmeansClust(zh, 3, matrix="scaled")
+kmeansClust <- function(object, centers, matrix='normalized', ...)
 {
-    exp_matrix <- t(GetMatrix(object, matrix))
+    exp_matrix <- t(assay(object, matrix))
     kmeans_section <- kmeans(exp_matrix,centers=centers, ...)
     percent_between <- kmeans_section$betweenss / kmeans_section$totss
     colData(object)$kmeans_cluster <- kmeans_section$cluster
@@ -208,9 +143,9 @@ KMeans <- function(object, centers, matrix='normalized', ...)
     for(i in seq_len(centers))
         cluster_list[[i]] <- as.character(colData(object)$section)[kmeans_section$cluster == i]
 
-    cat("KMeans results:\n")
+    message("K-Means results:\n")
     print(cluster_list)
-    cat("between_SS / total_SS =", percent_between,'\n')
+    message("between_SS / total_SS =", percent_between,'\n')
     return(object)
 }
 
@@ -230,11 +165,11 @@ KMeans <- function(object, centers, matrix='normalized', ...)
 #'
 #' @examples
 #' # return c(3, 10)
-#' FindPeak(c(0:5, 5:0), threshold=1, length=4)
+#' findPeak(c(0:5, 5:0), threshold=1, length=4)
 #'
 #' # Most likely return c(0, 0)
-#' FindPeak(rnorm(10), threshold=3, length=3)
-FindPeak <- function(x, threshold=1, length=4)
+#' findPeak(rnorm(10), threshold=3, length=3)
+findPeak <- function(x, threshold=1, length=4)
 {
     gt_threshold <- x > threshold
     consecutive <- rep(0, length(x) + 1)
@@ -265,6 +200,7 @@ FindPeak <- function(x, threshold=1, length=4)
 #' @param object A \code{SummarizedExperiment} object.
 #' @param threshold Integer, only scaled read counts bigger than \code{threshold} are recognized as part of the peak.
 #' @param length Integer, scaled read counts bigger than \code{threshold} in minimum \code{length} of consecutive sections are recognized as a peak.
+#' @param matrix Character, must be one of \code{"count"}, \code{"normalized"}, or \code{"scaled"}.
 #' @param nperm Integer, number of random permutations to calculate p values. Set it to 0 if you are not interested in p values.
 #' @param method Character, the method to adjust p values for multiple comparisons, must be one of \code{"holm"}, \code{"hochberg"}, \code{"hommel"}, \code{"bonferroni"}, \code{"BH"}, \code{"BY"}, \code{"fdr"}, \code{"none"}.
 #'
@@ -284,41 +220,39 @@ FindPeak <- function(x, threshold=1, length=4)
 #'  \item{\code{p.adj}} : Numeric, adjusted p values.
 #' }
 #'
-#' @importFrom SummarizedExperiment assays rowData
+#' @importFrom SummarizedExperiment assay assayNames rowData
 #' @importFrom stats p.adjust
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
-#' peak_genes <- FindPeakGene(zh)
+#' zh <- createTomo(zh.data)
+#' peak_genes <- findPeakGene(zh)
 #' head(peak_genes)
 #'
 #' # Increase threshold so that less peak genes will be found.
-#' peak_genes <- FindPeakGene(zh, threshold=1.5)
+#' peak_genes <- findPeakGene(zh, threshold=1.5)
 #'
 #' # Increase peak length so that less peak genes will be found.
-#' peak_genes <- FindPeakGene(zh, length=5)
+#' peak_genes <- findPeakGene(zh, length=5)
 #'
 #' # Set nperm to 0 so that p values will not be calculated. This will save running time.
-#' peak_genes <- FindPeakGene(zh, nperm=0)
-FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
+#' peak_genes <- findPeakGene(zh, nperm=0)
+findPeakGene <- function(object, threshold=1, length=4, matrix='scaled', nperm=1e5, method='BH')
 {
-    if(!"scaled" %in% names(assays(object)))
+    if(matrix=='scaled' & !"scaled" %in% assayNames(object))
     {
-        cat("Scaled data does not exist! Please run function 'Scale' before finding peak genes.\n")
+        message("scaleTomod data does not exist! Please run function 'scaleTomo' before finding peak genes.\n")
         return()
     }
     else
     {
-        scaled <- assays(object)$scaled
-        peak_position <- apply(scaled, 1, FindPeak, threshold, length)
+        exp_matrix <- assay(object, matrix)
+        peak_position <- apply(exp_matrix, 1, findPeak, threshold, length)
         peak_exist <- peak_position[1,] != 0
         if(!any(peak_exist))
         {
-            cat("No peak gene is found!\n")
+            message("No peak gene is found!\n")
             return()
         }
 
@@ -330,21 +264,22 @@ FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
                                    stringsAsFactors=FALSE)
 
         # Using permutation to calculate p-values
+        n_peak_genes <- length(peak_genes)
         if(nperm > 0)
         {
-            pvals <- NULL
+            pvals <- rep(NA, n_peak_genes)
             n_section <- nrow(object)
             saved_pvals <- rep(NA, n_section)
-            #saved_pvals[length] <- (n_section - length + 1) / choose(n_section, length)
-            for(gene in peak_genes)
+
+            for(i in seq_len(n_peak_genes))
             {
-                exp_gene <- scaled[gene, ]
+                exp_gene <- exp_matrix[peak_genes[i], ]
                 n_gt_threshold <- sum(exp_gene > threshold)
                 if(is.na(saved_pvals[n_gt_threshold]))
                 {
                     n_peak <- 0
-                    for(i in seq_len(nperm))
-                        n_peak <- n_peak + (FindPeak(sample(exp_gene))[1] > 0)
+                    for(perm in seq_len(nperm))
+                        n_peak <- n_peak + (findPeak(sample(exp_gene))[1] > 0)
                     pval <- n_peak / nperm
                     saved_pvals[n_gt_threshold] <- pval
                 }
@@ -352,7 +287,7 @@ FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
                 {
                     pval <- saved_pvals[n_gt_threshold]
                 }
-                pvals <- c(pvals, pval)
+                pvals[i] <- pval
             }
 
             peak_gene_df$p=pvals
@@ -360,7 +295,7 @@ FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
         }
 
         sorted_df <- peak_gene_df[order(peak_gene_df$start, peak_gene_df$end), ]
-        cat(nrow(sorted_df), "peak genes (spatially upregulated genes) are found!\n")
+        message(nrow(sorted_df), "peak genes (spatially upregulated genes) are found!\n")
         return(sorted_df)
     }
 }
@@ -371,6 +306,7 @@ FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
 #'
 #' @param object A \code{SummarizedExperiment} object.
 #' @param genes \code{NA} or a vector of character. Perform PCA on sections if it is \code{NA}, or on given genes if it is a vector of gene names.
+#' @param matrix Character, must be one of \code{"auto"}, \code{"count"}, \code{"normalized"}, or \code{"scaled"}. If \code{"auto"}, normalized matrix is used for sections and scaled matrix is used for genes.
 #' @param scree Logical, plot the scree plot for PCs if it is \code{TRUE}.
 #' @param ... Other parameters passed to \code{prcomp}.
 #'
@@ -379,36 +315,38 @@ FindPeakGene <- function(object, threshold=1, length=4, nperm=1e5, method='BH')
 #' @seealso \code{\link[stats]{prcomp}} for performing PCA on a matrix.
 #'
 #' @importFrom stats prcomp
-#' @importFrom SummarizedExperiment assays rowData<- colData<-
+#' @importFrom SummarizedExperiment assay rowData<- colData<-
 #' @importFrom ggplot2 ggplot aes_string geom_point labs theme_bw
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
+#' zh <- createTomo(zh.data)
 #'
 #' # Perform PCA on sections.
-#' zh <- PCA(zh)
+#' zh <- runPCA(zh)
 #'
 #' # Plot the scree plot.
-#' zh <- PCA(zh, scree=TRUE)
+#' zh <- runPCA(zh, scree=TRUE)
 #'
 #' # Perform PCA on some genes.
-#' zh <- PCA(zh, genes=rownames(zh)[1:100])
-PCA <- function(object, genes=NA, scree=FALSE, ...)
+#' zh <- runPCA(zh, genes=rownames(zh)[1:100])
+runPCA <- function(object, genes=NA, matrix='auto', scree=FALSE, ...)
 {
     if(all(is.na(genes)))
     {
-        pca_result <- prcomp(assays(object)$normalized, ...)
+        if(matrix == 'auto')
+            matrix <- 'normalized'
+        pca_result <- prcomp(assay(object, matrix), ...)
         colData(object)$PC1 <- pca_result$rotation[,1]
         colData(object)$PC2 <- pca_result$rotation[,2]
-        cat("PC embeddings for sections are saved in column data.\n")
+        message("PC embeddings for sections are saved in column data.\n")
     }
     else
     {
-        exp_matrix <- assays(object)$scaled[genes, ]
+        if(matrix == 'auto')
+            matrix <- 'scaled'
+        exp_matrix <- assay(object, matrix)[genes, ]
         pca_result <- prcomp(t(exp_matrix))
         pc1 <- pca_result$rotation[,1]
         pc2 <- pca_result$rotation[,2]
@@ -416,7 +354,7 @@ PCA <- function(object, genes=NA, scree=FALSE, ...)
         rowData(object)$PC2 <- NA
         rowData(object)[genes, 'PC1'] <- pc1
         rowData(object)[genes, 'PC2'] <- pc2
-        cat("PC embeddings for genes are saved in row data.\n")
+        message("PC embeddings for genes are saved in row data.\n")
     }
 
     if(scree)
@@ -437,47 +375,50 @@ PCA <- function(object, genes=NA, scree=FALSE, ...)
 #'
 #' @param object A \code{SummarizedExperiment} object.
 #' @param genes \code{NA} or a vector of character. Perform TSNE on sections if it is \code{NA}, or on given genes if it is a vector of gene names.
+#' @param matrix Character, must be one of \code{"auto"}, \code{"count"}, \code{"normalized"}, or \code{"scaled"}. If \code{"auto"}, normalized matrix is used for sections and scaled matrix is used for genes.
 #' @param perplexity Numeric, perplexity parameter for Rtsne (default: 0.25 *(number of observations - 1)).
 #' @param ... Other parameters passed to \code{Rtsne}.
 #'
 #' @return A \code{SummarizedExperiment} object. The TSNE embeddings are saved in slot \code{meta} if TSNE is performed on sections, or saved in slot \code{gene_embedding} if TSNE is performed on genes.
 #'
-#' @seealso \code{\link[Rtsne]{Rtsne}} for performing PCA on a matrix.
+#' @seealso \code{\link[Rtsne]{Rtsne}} for performing TSNE on a matrix.
 #'
 #' @importFrom Rtsne Rtsne
-#' @importFrom SummarizedExperiment assays rowData<- colData<-
+#' @importFrom SummarizedExperiment assay rowData<- colData<-
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
+#' zh <- createTomo(zh.data)
 #'
 #' # Perform TSNE on sections.
-#' zh <- TSNE(zh)
+#' zh <- runTSNE(zh)
 #'
 #' # Perform TSNE on sections with other perplexity.
-#' zh <- TSNE(zh, perplexity=10)
+#' zh <- runTSNE(zh, perplexity=10)
 #'
 #' # Perform TSNE on some genes.
-#' zh <- TSNE(zh, genes=rownames(zh)[1:100])
-TSNE <- function(object, genes=NA, perplexity=NA, ...)
+#' zh <- runTSNE(zh, genes=rownames(zh)[1:100])
+runTSNE <- function(object, genes=NA, matrix='auto', perplexity=NA, ...)
 {
     if(all(is.na(genes)))
     {
+        if(matrix == 'auto')
+            matrix <- 'normalized'
         if(is.na(perplexity))
             perplexity <- (ncol(object) - 1) / 4
-        tsne_result <- Rtsne(t(assays(object)$normalized), perplexity=perplexity, ...)
+        tsne_result <- Rtsne(t(assay(object, matrix)), perplexity=perplexity, ...)
         colData(object)$TSNE1 <- tsne_result$Y[,1]
         colData(object)$TSNE2 <- tsne_result$Y[,2]
-        cat("TSNE embeddings for sections are saved in column data.\n")
+        message("TSNE embeddings for sections are saved in column data.\n")
     }
     else
     {
+        if(matrix == 'auto')
+            matrix <- 'scaled'
         if(is.na(perplexity))
             perplexity <- (length(genes) - 1) / 4
-        exp_matrix <- assays(object)$scaled[genes, ]
+        exp_matrix <- assay(object, matrix)[genes, ]
         tsne_result <- Rtsne(exp_matrix, perplexity=perplexity, ...)
         tsne1 <- tsne_result$Y[,1]
         tsne2 <- tsne_result$Y[,2]
@@ -485,7 +426,7 @@ TSNE <- function(object, genes=NA, perplexity=NA, ...)
         rowData(object)$TSNE2 <- NA
         rowData(object)[genes, 'TSNE1'] <- tsne1
         rowData(object)[genes, 'TSNE2'] <- tsne2
-        cat("TSNE embeddings for genes are saved in row data.\n")
+        message("TSNE embeddings for genes are saved in row data.\n")
     }
     return(object)
 }
@@ -496,6 +437,7 @@ TSNE <- function(object, genes=NA, perplexity=NA, ...)
 #'
 #' @param object A \code{SummarizedExperiment} object.
 #' @param genes \code{NA} or a vector of character. Perform UMAP on sections if it is \code{NA}, or on given genes if it is a vector of gene names.
+#' @param matrix Character, must be one of \code{"auto"}, \code{"count"}, \code{"normalized"}, or \code{"scaled"}. If \code{"auto"}, normalized matrix is used for sections and scaled matrix is used for genes.
 #' @param ... Other parameters passed to \code{umap}.
 #'
 #' @return A \code{SummarizedExperiment} object. The UMAP embeddings are saved in slot \code{meta} if UMAP is performed on sections, or saved in slot \code{gene_embedding} if UMAP is performed on genes.
@@ -503,32 +445,34 @@ TSNE <- function(object, genes=NA, perplexity=NA, ...)
 #' @seealso \code{\link[umap]{umap}} for performing UMAP on a matrix.
 #'
 #' @importFrom umap umap
-#' @importFrom SummarizedExperiment assays rowData<- colData<-
+#' @importFrom SummarizedExperiment assay rowData<- colData<-
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
+#' zh <- createTomo(zh.data)
 #'
-#' # Perform TSNE on sections.
-#' zh <- UMAP(zh)
+#' # Perform UMAP on sections.
+#' zh <- runUMAP(zh)
 #'
-#' # Perform TSNE on some genes.
-#' zh <- UMAP(zh, genes=rownames(zh)[1:100])
-UMAP <- function(object, genes=NA, ...)
+#' # Perform UMAP on some genes.
+#' zh <- runUMAP(zh, genes=rownames(zh)[1:100])
+runUMAP <- function(object, genes=NA, matrix='auto', ...)
 {
     if(all(is.na(genes)))
     {
-        umap_result <- umap(t(assays(object)$normalized), ...)
+        if(matrix == 'auto')
+            matrix <- 'normalized'
+        umap_result <- umap(t(assay(object, matrix)), ...)
         colData(object)$UMAP1 <- umap_result$layout[,1]
         colData(object)$UMAP2 <- umap_result$layout[,2]
-        cat("UMAP embeddings for sections are saved in column data.\n")
+        message("UMAP embeddings for sections are saved in column data.\n")
     }
     else
     {
-        exp_matrix <- assays(object)$scaled[genes, ]
+        if(matrix == 'auto')
+            matrix <- 'scaled'
+        exp_matrix <- assay(object, matrix)[genes, ]
         umap_result <- umap(exp_matrix, ...)
         umap1 <- umap_result$layout[,1]
         umap2 <- umap_result$layout[,2]
@@ -536,7 +480,7 @@ UMAP <- function(object, genes=NA, ...)
         rowData(object)$UMAP2 <- NA
         rowData(object)[genes, 'UMAP1'] <- umap1
         rowData(object)[genes, 'UMAP2'] <- umap2
-        cat("UMAP embeddings for genes are saved in row data.\n")
+        message("UMAP embeddings for genes are saved in row data.\n")
     }
     return(object)
 }

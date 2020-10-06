@@ -13,27 +13,26 @@
 #' @seealso \code{geom_smooth} for plotting smooth lines, \code{facet_wrap} for faceting genes.
 #'
 #' @importFrom ggplot2 ggplot aes_string theme theme_bw geom_smooth geom_line labs facet_wrap
-#' @importFrom SummarizedExperiment rowData colData
+#' @importFrom SummarizedExperiment assay rowData colData
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' LinePlot(zh,
+#' zh <- createTomo(zh.data)
+#' linePlot(zh,
 #'  c("ENSDARG00000002131", "ENSDARG00000003061", "ENSDARG00000076075", "ENSDARG00000076850"))
 #'
 #' # Do not smooth lines.
-#' LinePlot(zh,
+#' linePlot(zh,
 #'  c("ENSDARG00000002131", "ENSDARG00000003061", "ENSDARG00000076075", "ENSDARG00000076850"), span=0)
 #'
 #' # Plot genes in different facets.
-#' LinePlot(zh,
+#' linePlot(zh,
 #'  c("ENSDARG00000002131", "ENSDARG00000003061", "ENSDARG00000076075", "ENSDARG00000076850"),
 #'  facet=TRUE)
-LinePlot <- function(object, genes, matrix='normalized', facet=FALSE, span=0.3)
+linePlot <- function(object, genes, matrix='normalized', facet=FALSE, span=0.3)
 {
-    exp_matrix <- GetMatrix(object, matrix)
+    exp_matrix <- assay(object, matrix)
     exp_genes <- subset(exp_matrix, rowData(object)$gene %in% genes)
     exp_genes_df <- NULL
     sections <- factor(colData(object)$section, levels=colData(object)$section)
@@ -45,7 +44,7 @@ LinePlot <- function(object, genes, matrix='normalized', facet=FALSE, span=0.3)
     ylab <- c('Count', 'Normalized count', 'Scaled expression')[c('count', 'normalized', 'scaled') == matrix]
 
     g <- ggplot(exp_genes_df, aes_string(x='section', y='value', group='gene', color='gene')) +
-        labs(x='', y=ylab) +
+        labs(y=ylab) +
         theme_bw() +
         theme(legend.position='top', axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 
@@ -78,25 +77,24 @@ LinePlot <- function(object, genes, matrix='normalized', facet=FALSE, span=0.3)
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- TSNE(zh)
+#' zh <- createTomo(zh.data)
+#' zh <- runTSNE(zh)
 #' # Plot TSNE embeddings.
-#' EmbedPlot(zh)
+#' embedPlot(zh)
 #'
 #' # Plot UMAP embeddings.
-#' zh <- UMAP(zh)
-#' EmbedPlot(zh, method="UMAP")
+#' zh <- runUMAP(zh)
+#' embedPlot(zh, method="UMAP")
 #'
 #' # Color sections by kmeans cluster labels.
-#' zh <- KMeans(zh, 3)
-#' EmbedPlot(zh, group="kmeans_cluster")
-EmbedPlot <- function(object, group='section', method='TSNE')
+#' zh <- kmeansClust(zh, 3)
+#' embedPlot(zh, group="kmeans_cluster")
+embedPlot <- function(object, group='section', method='TSNE')
 {
     if(!group %in% names(colData(object)))
     {
         group <- 'section'
-        cat("Unknown parameter 'group' for plotting sections!")
+        message("Unknown parameter 'group' for plotting sections!")
     }
     colData(object)[[group]] <- as.character(colData(object)[[group]])
 
@@ -113,7 +111,7 @@ EmbedPlot <- function(object, group='section', method='TSNE')
         }
         else
         {
-            cat("Function 'TSNE' must be run before plotting TSNE embeddings.\n")
+            message("Function 'runTSNE' must be run before plotting TSNE embeddings.\n")
         }
     }
     else if(method == 'UMAP')
@@ -129,7 +127,7 @@ EmbedPlot <- function(object, group='section', method='TSNE')
         }
         else
         {
-            cat("Function 'UMAP' must be run before plotting UMAP embeddings.\n")
+            message("Function 'runUMAP' must be run before plotting UMAP embeddings.\n")
         }
     }
     else if(method == 'PCA')
@@ -145,12 +143,12 @@ EmbedPlot <- function(object, group='section', method='TSNE')
         }
         else
         {
-            cat("Function 'PCA' must be run before plotting PC embeddings.\n")
+            message("Function 'runPCA' must be run before plotting PC embeddings.\n")
         }
     }
     else
     {
-        cat("Unknown embeddings!\n")
+        message("Unknown embeddings!\n")
     }
 }
 
@@ -165,26 +163,25 @@ EmbedPlot <- function(object, group='section', method='TSNE')
 #'
 #' @return A \code{ggplot} object.
 #'
-#' @importFrom SummarizedExperiment assays rowData
+#' @importFrom SummarizedExperiment rowData
 #' @importFrom ggplot2 ggplot aes_string geom_point theme theme_bw
 #'
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' peak_genes <- FindPeakGene(zh)
-#' zh <- TSNE(zh, peak_genes$gene)
+#' zh <- createTomo(zh.data)
+#' peak_genes <- findPeakGene(zh)
+#' zh <- runTSNE(zh, peak_genes$gene)
 #' # Color genes by peak centers.
-#' GeneEmbedPlot(zh, peak_genes)
+#' geneEmbedPlot(zh, peak_genes)
 #'
 #' # Color genes by peak starts.
-#' GeneEmbedPlot(zh, peak_genes, group="start")
+#' geneEmbedPlot(zh, peak_genes, group="start")
 #'
 #' # Do not color genes.
-#' GeneEmbedPlot(zh, peak_genes["gene"])
-GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
+#' geneEmbedPlot(zh, peak_genes["gene"])
+geneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
 {
     if(group %in% names(gene.df))
         gene.df[[group]] <- as.factor(gene.df[[group]])
@@ -206,7 +203,7 @@ GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
         }
         else
         {
-            cat("Function 'TSNE' must be run for input genes before plotting TSNE embeddings.\n")
+            message("Function 'TSNE' must be run for input genes before plotting TSNE embeddings.\n")
         }
     }
     else if(method == 'UMAP')
@@ -227,7 +224,7 @@ GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
         }
         else
         {
-            cat("Function 'UMAP' must be run for input genes before plotting UMAP embeddings.\n")
+            message("Function 'UMAP' must be run for input genes before plotting UMAP embeddings.\n")
         }
     }
     else if(method == 'PCA')
@@ -248,12 +245,12 @@ GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
         }
         else
         {
-            cat("Function 'PCA' must be run for input genes before plotting PC embeddings.\n")
+            message("Function 'runPCA' must be run for input genes before plotting PC embeddings.\n")
         }
     }
     else
     {
-        cat("Unknown embeddings!\n")
+        message("Unknown embeddings!\n")
     }
 }
 
@@ -268,39 +265,39 @@ GeneEmbedPlot <- function(object, gene.df, group='center', method='TSNE')
 #'
 #' @return A \code{ggplot} object.
 #'
+#' @importFrom SummarizedExperiment assay
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot aes_string geom_raster scale_fill_gradient2 theme element_blank element_text
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom ggplot2 ggplot aes_string geom_raster scale_fill_distiller theme element_blank element_text
 #'
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
+#' zh <- createTomo(zh.data)
 #'
 #' # Plot some genes.
-#' ExpHeatmap(zh,
+#' expHeatmap(zh,
 #'  c("ENSDARG00000002131", "ENSDARG00000003061", "ENSDARG00000076075", "ENSDARG00000076850"))
 #'
 #' # Plot peak genes.
-#' peak_genes <- FindPeakGene(zh)
-#' ExpHeatmap(zh, peak_genes$gene)
+#' peak_genes <- findPeakGene(zh)
+#' expHeatmap(zh, peak_genes$gene)
 #'
 #' # Remove gene names if too many genes are in the heatmap.
-#' ExpHeatmap(zh, peak_genes$gene, size=0)
-ExpHeatmap <- function(object, genes, matrix='scaled', size=5)
+#' expHeatmap(zh, peak_genes$gene, size=0)
+expHeatmap <- function(object, genes, matrix='scaled', size=5)
 {
     genes <- rev(as.character(genes))
-    exp_matrix <- GetMatrix(object, matrix)[genes, ]
-    if(matrix == 'normalized')
+    exp_matrix <- assay(object, matrix)[genes, ]
+    if(matrix %in% c('count', 'normalized'))
         exp_matrix <- log10(exp_matrix + 1)
     genes_df <- melt(exp_matrix, varnames=c('gene','section'))
     exp_name <-  c('Log10(Count+1)', 'Log10(Normalized count+1)', 'Scaled expression\n(Z score)')[c('count', 'normalized', 'scaled') == matrix]
 
     g <- ggplot(genes_df, aes_string(x='section', y='gene', fill='value')) +
         geom_raster() +
-        scale_fill_gradient2(low='magenta', mid='black', high='yellow', name=exp_name) +
+        scale_fill_distiller(palette='RdYlBu', name=exp_name) +
         theme(axis.line=element_blank(),
               axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
               axis.ticks=element_blank(),
@@ -324,28 +321,27 @@ ExpHeatmap <- function(object, genes, matrix='scaled', size=5)
 #'
 #' @return A \code{ggplot} object.
 #'
+#' @importFrom SummarizedExperiment assay
 #' @importFrom stats cor
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot aes_string geom_raster scale_fill_gradientn labs theme element_blank element_text
-#' @importFrom colorRamps rgb.tables
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom ggplot2 ggplot aes_string geom_raster scale_fill_distiller labs theme element_blank element_text
 #'
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
-#' CorHeatmap(zh)
+#' zh <- createTomo(zh.data)
+#' corHeatmap(zh)
 #'
 #' # Use Spearman correlation coefficients.
-#' CorHeatmap(zh, cor.method='spearman')
+#' corHeatmap(zh, cor.method='spearman')
 #'
 #' # Set max correlation coefficients to 0.3.
-#' CorHeatmap(zh, max.cor=0.3)
-CorHeatmap <- function(object, matrix='scaled', max.cor=0.5, cor.method='pearson')
+#' corHeatmap(zh, max.cor=0.3)
+corHeatmap <- function(object, matrix='scaled', max.cor=0.5, cor.method='pearson')
 {
-    exp_matrix <- GetMatrix(object, matrix=matrix)
+    exp_matrix <- assay(object, matrix)
     cor_matrix <- cor(exp_matrix, method=cor.method)
     cor_matrix[cor_matrix > max.cor] <- max.cor
     cor_df <- melt(cor_matrix, varnames=c('section1','section2'))
@@ -354,7 +350,7 @@ CorHeatmap <- function(object, matrix='scaled', max.cor=0.5, cor.method='pearson
 
     g <- ggplot(cor_df, aes_string(x='section1', y='section2', fill='value')) +
         geom_raster() +
-        scale_fill_gradientn(colors=rgb.tables(10), name=cor_name) +
+        scale_fill_distiller(palette='RdYlBu', name=cor_name) +
         labs(x='', y='') +
         theme(axis.line=element_blank(),
               axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
@@ -377,39 +373,39 @@ CorHeatmap <- function(object, matrix='scaled', max.cor=0.5, cor.method='pearson
 #'
 #' @details This method can create a pure heatmap or a heatmap with side bar. If you prefer a pure heatmap, input a \code{gene.df} with a single column of gene names.
 #' However, you may want to show additional information of genes with a side bar, and the grouping information should be saved as additional column(s) of \code{gene.df}, and declared as \code{group}.
-#' By default, you can use the output by \code{FindPeakGene} as input \code{gene.df}. Peak genes will be grouped by their centers on the side bar.
+#' By default, you can use the output by \code{findPeakGene} as input \code{gene.df}. Peak genes will be grouped by their centers on the side bar.
 #'
 #' @return A \code{ggplot} object.
 #'
+#' @importFrom SummarizedExperiment assay
 #' @importFrom stats cor
 #' @importFrom grDevices rainbow
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot aes_string geom_raster scale_fill_gradientn labs theme element_blank element_text ggplot_build scale_color_manual guides annotation_raster guide_legend coord_cartesian
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom ggplot2 ggplot aes_string geom_raster scale_fill_distiller labs theme element_blank element_text ggplot_build scale_color_manual guides annotation_raster guide_legend coord_cartesian
 #'
 #' @export
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- CreateTomo(zh.data)
-#' zh <- Normalize(zh)
-#' zh <- Scale(zh)
+#' zh <- createTomo(zh.data)
 #'
 #' # Correlation heatmap for all peak genes.
-#' peak_genes <- FindPeakGene(zh)
-#' GeneCorHeatmap(zh, peak_genes)
+#' peak_genes <- findPeakGene(zh)
+#' geneCorHeatmap(zh, peak_genes)
 #'
 #' # Use Spearman correlation coefficients.
-#' GeneCorHeatmap(zh, peak_genes, cor.method="spearman")
+#' geneCorHeatmap(zh, peak_genes, cor.method="spearman")
 #'
 #' # Group genes by peak start.
-#' GeneCorHeatmap(zh, peak_genes, group="start")
+#' geneCorHeatmap(zh, peak_genes, group="start")
 #'
 #' # Plot without side bar.
-#' GeneCorHeatmap(zh, data.frame(
+#' geneCorHeatmap(zh, data.frame(
 #'  gene=c("ENSDARG00000002131", "ENSDARG00000003061", "ENSDARG00000076075", "ENSDARG00000076850")))
-GeneCorHeatmap <- function(object, gene.df, group='center', matrix='scaled', size=5, cor.method='pearson')
+geneCorHeatmap <- function(object, gene.df, group='center', matrix='scaled', size=5, cor.method='pearson')
 {
-    exp_matrix <- GetMatrix(object, matrix=matrix)
+    exp_matrix <- assay(object, matrix)
     genes <- as.character(gene.df$gene)
     cor_matrix <- cor(t(exp_matrix[genes, ]), method=cor.method)
     cor_df <- melt(cor_matrix, varnames=c('gene1', 'gene2'))
@@ -430,7 +426,7 @@ GeneCorHeatmap <- function(object, gene.df, group='center', matrix='scaled', siz
 
     g <- ggplot(cor_df, aes_string(x='gene1', y='gene2', fill='value')) +
         geom_raster() +
-        scale_fill_gradientn(colors=rgb.tables(10), name=cor_name)  +
+        scale_fill_distiller(palette='RdYlBu', name=cor_name)  +
         labs(x='', y='') +
         theme(axis.line=element_blank(),
               axis.text.y=element_blank(),
@@ -451,9 +447,10 @@ GeneCorHeatmap <- function(object, gene.df, group='center', matrix='scaled', siz
         y_max <- y_min + 0.03 * y_range
 
         g <- g + geom_point(aes_string(color='group'), alpha=0, shape=15, size=5) +
-            scale_color_manual(name=group, values=color_legend)  +
+            scale_color_manual(name=group, values=color_legend) +
             guides(color=guide_legend(override.aes=list(alpha=1))) +
-            annotation_raster(t(color_legend[as.character(group_genes)]), -Inf, Inf, ymin=y_min, ymax=y_max) +
+            annotation_raster(t(color_legend[as.character(group_genes)]),
+                              -Inf, Inf, ymin=y_min, ymax=y_max) +
             coord_cartesian(ylim = c(0, y_max), clip='off')
     }
 

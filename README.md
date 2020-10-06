@@ -13,7 +13,7 @@ https://liuwd15.github.io/about
 ```r
 if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
-BiocManager::install("liuwd15/tomoda")
+BiocManager::install("tomoda")
 ```
 
 ## Issues and bug reports

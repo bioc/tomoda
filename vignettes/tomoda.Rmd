@@ -18,171 +18,304 @@ knitr::opts_chunk$set(
 
 # Introduction
 ## Background
-The tomo-seq technique is based on cryosectioning of tissue and performing RNA-seq on consecutive sections. Unlike common RNA-seq which is performed on independent samples, tomo-seq is performed on consecutive sections from one sample. Therefore tomo-seq data contain spatial information of transcriptome, and it is a good approach to examine gene expression change across a anatomic region.
+The tomo-seq technique is based on cryosectioning of tissue and performing 
+RNA-seq on consecutive sections. Unlike common RNA-seq which is performed on 
+independent samples, tomo-seq is performed on consecutive sections from one 
+sample. Therefore tomo-seq data contain spatial information of transcriptome, 
+and it is a good approach to examine gene expression change across an anatomic 
+region.
 
-This vignette will demonstrate the workflow to analyze and visualize tomo-seq data using `r Githubpkg("liuwd15/tomoda")`. The main purpose of the package it to find anatomic zones with similar transcriptional profiles and spatially expressed genes in a tomo-seq sample. Several visulization functions create easy-to-modify plots are available to help users do this.
+This vignette will demonstrate the workflow to analyze and visualize tomo-seq 
+data using `r Biocpkg('tomoda')`. The main purpose of the package 
+it to find anatomic zones with similar transcriptional profiles and spatially 
+expressed genes in a tomo-seq sample. Several visualization functions create 
+easy-to-modify plots are available to help users do this.
 
-At the beginning, we load necessary libraries .
+At the beginning, we load necessary libraries.
 ```{r setup, message=FALSE}
 library(SummarizedExperiment)
 library(tomoda)
 ```
 
 ## Dataset
-This package contains an examplary dataset geneated from 3 day post cryinjury heart of zebrafish, obtained from [GSE74652](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE74652). The dataset contains the raw read count of 16495 genes across 40 sections. Here we load the dataset and view the first several rows of it.
+This package contains an examplary dataset geneated from 3 day post cryinjury 
+heart of zebrafish, obtained from [GSE74652](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE74652). The 
+dataset contains the raw read count of 16495 genes across 40 sections. Here we 
+load the dataset and view the first several rows of it.
 
 ```{r}
 data(zh.data)
 head(zh.data)
 ```
 
-When using your own tomo-seq dataset, try to make your data the same structure as the examplary read count matrix. Each row corresponds to a gene and each row correspond to a section. The row names of the matrix are gene names. Importantly, the columns **MUST** be ordered according to the spatial sequence of sections.
+When using your own tomo-seq dataset, try to make your data the same structure 
+as the examplary read count matrix. Each row corresponds to a gene and each row 
+correspond to a section. The row names of the matrix are gene names. 
+Importantly, the columns **MUST** be ordered according to the spatial sequence 
+of sections.
 
 # Preprocessing
 
-## Create a Tomo Object
+## Create a Tomo object
 
-Now we create a Tomo object with the raw read count matrix. Genes expressed in less than 3 sections are filtered out. You can change this threshold by changing the parameter `min.section` of function `CreateTomo`. A Tomo object is an instance of `r Biocpkg("SummarizedExperiment")`. If you have additional information about sections, save them in `colData(object)`, a data frame used to save meta data describing sections.
+Now we create a Tomo object with the raw read count matrix. Genes expressed in 
+less than 3 sections are filtered out. You can change this threshold by changing
+the parameter `min.section` of function `CreateTomo`. A Tomo object is an 
+instance of `r Biocpkg("SummarizedExperiment")`. If you have additional 
+information about sections, save them in `colData(object)`, a data frame used to
+save meta data describing sections.
 
 ```{r}
-zh <- CreateTomo(zh.data)
+zh <- createTomo(zh.data)
 zh
 ```
 
-If you have a normalized expression matrix rather than raw read count matrix, it can also be used for input.
+If you have a normalized expression matrix rather than raw read count matrix, it
+can also be used for input.
 ```
-your_object <- CreateTomo(matrix.normalized = normalized) 
+your_object <- createTomo(matrix.normalized = normalized) 
 # Replace normalized with your normalized expression matrix.
+```
+
+If you have an existing SummarizedExperiment object, it can also be used for 
+input. Just remember that the object must contain at least one of 'count' assay 
+and 'normalized' assay.
+```
+your_object <- createTomo(se) 
+# Replace se with a SummarizedExperiment object.
 ```
 
 ## Normalize and scale data
 
-Before analyzing data, the raw read count should be normalized and scaled.
+By default, raw read count matrix is normalized and scaled across sections. The
+raw read count, normalized read count matrix and scaled read count matrix are 
+saved in 'count', 'normalized' and 'scale' assays of the object. These matrices 
+can be accessed using function `assay`.
+
 ```{r}
-zh <- Normalize(zh)
-zh <- Scale(zh)
-zh
+head(assay(zh, 'scaled'))
 ```
 
-During normalization, the library sizes of all sections are set to the median of all library sizes. We do not normalize gene lengths as we will not perform comparision between two genes. If the normalized read count matrix is used as input, skip this step.
+During normalization, the library sizes of all sections are set to the median of
+all library sizes. They can also be normalized to 1 million counts to obtain 
+Count Per Million (CPM) value by setting parameter `normalize.method = "cpm"`. 
+```
+zh <- createTomo(zh.data, normalize.method = "cpm") 
+```
 
-Then the normalized data is scaled across sections for each gene. The normalized read counts of each gene are subjected to Z score transformation such that they have mean as 0 and standard deviation as 1.
+We do not normalize gene lengths as we will not perform  comparision between two
+genes. If the normalized read count matrix is used as input, this step is 
+skipped.
+
+Then the normalized data is scaled across sections for each gene. The normalized
+read counts of each gene are subjected to Z score transformation such that they 
+have mean as 0 and standard deviation as 1.
 
 # Find zones with different transcriptional profiles
 
 ## Correlation analysis
 
-A good start to analyze tomo-seq data is correlation analysis. Here we calculate the Pearson correlation coefficients between every pair of sections across all genes and visualize them with a heatmap. Parameter `max.cor` defines the maximum value for the heatmap, and coefficients bigger than it are clipped to it. This is because diagonal coefficients are 1, usually much bigger than other coefficients, so clipping them to a smaller value will show other coefficients more clearly.
+A good start to analyze tomo-seq data is correlation analysis. Here we calculate
+the Pearson correlation coefficients between every pair of sections across all 
+genes and visualize them with a heatmap. Parameter `max.cor` defines the maximum
+value for the heatmap, and coefficients bigger than it are clipped to it. This 
+is because diagonal coefficients are 1, usually much bigger than other 
+coefficients, so clipping them to a smaller value will show other coefficients 
+more clearly.
 ```{r}
-CorHeatmap(zh, max.cor=0.3)
+corHeatmap(zh, max.cor=0.3)
 ```
-We would expect that adjacent sections have similar transcriptional profiles and thus have bigger correlation coefficients. Therefore, a pair of adjacent sections with small correlation coefficients should be noted. They may act as borders of two zones with different transcriptional profiles. A border of different zones is usually a border of dark blue and light blue/green/yellow on the heatmap. For example, section X13 and X20 are two borders in this dataset according to the heatmap.
+We would expect that adjacent sections have similar transcriptional profiles and
+thus have bigger correlation coefficients. Therefore, a pair of adjacent 
+sections with small correlation coefficients should be noted. They may act as 
+borders of two zones with different transcriptional profiles. A border of 
+different zones is usually a border of dark blue and light blue/green/yellow on 
+the heatmap. For example, section X13 and X20 are two borders in this dataset 
+according to the heatmap.
 
 ## Dimensionality reduction analysis
 
-Another method to visualize the similarity of sections is to perform dimensionality reduction. Sections are embedded in a two-dimensional space and plotted as points. similar sections are modeled by nearby points and dissimilar sections are modeled by distant points with high probability.
+Another method to visualize the similarity of sections is to perform 
+dimensionality reduction. Sections are embedded in a two-dimensional space and 
+plotted as points. similar sections are modeled by nearby points and dissimilar
+sections are modeled by distant points with high probability.
 
-We first try PCA, a classic linear dimensionality reduction algorithm. We can see a general trend of bottom-left to upper-right with increasing section indexes, but it is hard to find clear borders. The embeddings of sections output by the function are saved in the Tomo object, and you can access them with `colData(object)`.
+We first try PCA, a classic linear dimensionality reduction algorithm. We can 
+see a general trend of bottom-left to upper-right with increasing section 
+indexes, but it is hard to find clear borders. The embeddings of sections output
+by the function are saved in the Tomo object, and you can access them with 
+`colData(object)`.
 ```{r}
-zh <- PCA(zh)
-EmbedPlot(zh, method="PCA")
+zh <- runPCA(zh)
+embedPlot(zh, method="PCA")
 head(colData(zh))
 ```
-Next we move to two popular non-linear dimensionality reduction algorithm, tSNE and UMAP. These algorithms are designed to learn the underlying manifold of data and project similar sections together in low-dimensional spaces. Users are welcomed to tune the parameter of these algoritm to show better results with custom dataset.
+Next we move to two popular non-linear dimensionality reduction algorithm, tSNE
+and UMAP. These algorithms are designed to learn the underlying manifold of data
+and project similar sections together in low-dimensional spaces. Users are 
+welcomed to tune the parameter of these algorithm to show better results with 
+custom dataset.
 
-In the examplary dataset, two clusters of sections with a large margin are shown in both tSNE and UMAP embedding plots. According to the labels of sections, we could identify a border at X21 ~ X22.
+In the examplary dataset, two clusters of sections with a large margin are shown
+in both tSNE and UMAP embedding plots. According to the labels of sections, we 
+could identify a border at X21 ~ X22.
 
 ```{r}
 set.seed(1)
-zh <- TSNE(zh)
-EmbedPlot(zh, method="TSNE")
+zh <- runTSNE(zh)
+embedPlot(zh, method="TSNE")
 
-zh <- UMAP(zh)
-EmbedPlot(zh, method="UMAP")
+zh <- runUMAP(zh)
+embedPlot(zh, method="UMAP")
 ```
 
 ## Clustering analysis
 
-Sometimes it is hard to find borders manually with results above, so we include some clustering algorithms to help users do this.
+Sometimes it is hard to find borders manually with results above, so we include 
+some clustering algorithms to help users do this.
 
-Hierarchical clustering is good at build a hierachy of clusters. You can easily find similar sections from adjacent nodes in the dendrogram. However, beware that hierarchical clustering is based on greedy algorithm, so its partitions may not be suitable to define a few clusters.
+Hierarchical clustering is good at build a hierachy of clusters. You can easily 
+find similar sections from adjacent nodes in the dendrogram. However, beware 
+that hierarchical clustering is based on greedy algorithm, so its partitions may
+not be suitable to define a few clusters.
 
 ```{r}
-hc_zh <- HClust(zh)
+hc_zh <- hierarchClust(zh)
 plot(hc_zh)
 ```
-If certain number of clusters of sections with large margins are observed in embedding plots, or you already decide the number of zones, using K-Means for clustering is a good choice. Input your expected number of clusters as parameter `centers`, sections will be divided into clusters. The cluster labels output by K-Means are saved in `colData(object)`. When plotting the embeddings of sections, you can use K-Means cluster labels for the colors of sections.
+If certain number of clusters of sections with large margins are observed in 
+embedding plots, or you already decide the number of zones, using K-Means for 
+clustering is a good choice. Input your expected number of clusters as parameter
+`centers`, sections will be divided into clusters. The cluster labels output by 
+K-Means are saved in `colData(object)`. When plotting the embeddings of 
+sections, you can use K-Means cluster labels for the colors of sections.
 
 ```{r}
-zh <- KMeans(zh, centers=3)
+zh <- kmeansClust(zh, centers=3)
 head(colData(zh))
-EmbedPlot(zh, group='kmeans_cluster')
+embedPlot(zh, group='kmeans_cluster')
 ```
 
 # Analyze peak genes
 
 ## Find peak genes
 
-As tomo-seq data contains spatial information, it is important to find spatially expressed genes. These spatially expressed genes may have biological implications in certain zones. We call spatially upregulated genes **"peak genes"** and a function is used to find these genes. Here are two parameters to judge whether a gene is a peak gene: `threshold` and `length`. Genes with scaled read counts bigger than `threshold` in minimum `length` consecutive sections are recognized as peak genes. 
+As tomo-seq data contains spatial information, it is important to find spatially
+expressed genes. These spatially expressed genes may have biological 
+implications in certain zones. We call spatially upregulated genes 
+**"peak genes"** and a function is used to find these genes. Here are two 
+parameters to judge whether a gene is a peak gene: `threshold` and `length`. 
+Genes with scaled read counts bigger than `threshold` in minimum `length` 
+consecutive sections are recognized as peak genes. 
 
-The output of this function is a data frame containing the *names*, *start section indexes*, *end section indexes*, *center section indexes*, *p values* and *adjusted p values* of peak genes. P values are calculated by approximate permutation tests. Change the parameter `nperm` to change the number of random permutations.
+The output of this function is a data frame containing the *names*, 
+*start section indexes*, *end section indexes*, *center section indexes*, 
+*p values* and *adjusted p values* of peak genes. P values are calculated by 
+approximate permutation tests. Change the parameter `nperm` to change the number
+of random permutations.
 
 ```{r}
-peak_genes <- FindPeakGene(zh, threshold = 1, length = 4, nperm = 1e5)
+peak_genes <- findPeakGene(zh, threshold = 1, length = 4, nperm = 1e5)
 head(peak_genes)
 ```
 
-After finding peak genes, we can visualize their expression across sections with a heatmap.
+After finding peak genes, we can visualize their expression across sections with
+a heatmap. Parameter `size` controls the size of gene names. When there are too 
+many genes and showing overlapping names make the plot untidy, we set it to 0.
 
 ```{r}
-ExpHeatmap(zh, peak_genes$gene, size=0)
+expHeatmap(zh, peak_genes$gene, size=0)
 ```
 
 ## Find co-regulated genes
 
-After finding peak genes and taking a look of the output data frame, you may notice that many genes have similar expression pattern. For example, the first 47 peak genes in this dataset all have peak expression at section 1~4. It is intuitive to think that these genes are co-regulated by certain transcription factors and involve in related pathways. 
+After finding peak genes and taking a look of the output data frame, you may 
+notice that many genes have similar expression pattern. For example, the first 
+47 peak genes in this dataset all have peak expression at section 1~4. It is 
+intuitive to think that these genes are co-regulated by certain transcription 
+factors and involve in related pathways. 
 
-Like what we do for sections, we calculate the Pearson correlation coefficients between every pair of genes across sections and visualize them with a heatmap. Parameter `size` control the size of gene names. When there are too many genes, we set it to 0.
+Like what we do for sections, we calculate the Pearson correlation coefficients 
+between every pair of genes across sections and visualize them with a heatmap. 
+Parameter `size` controls the size of gene names, which is same as that in 
+`expHeatmap`.
+
+Notice that `geneCorHeatmap` takes a data frame describing genes as input. You 
+can use the output from `findPeakGenes` as input for this function. Variables in
+the data frame can be used to plot a side bar above the heatmap. For example, 
+with default settings, the side bar describe peak centers of genes. Other 
+variables like `start` can also be used to group genes.
+
 ```{r}
-GeneCorHeatmap(zh, peak_genes, size=0)
+geneCorHeatmap(zh, peak_genes, size=0)
+# Use variable 'start' to group genes
+geneCorHeatmap(zh, peak_genes, group='start', size=0)
 ```
 
-Similarly, we also visualize the two-dimensional embeddings of genes to find clusters of genes with similar expression pattern.
-```{r}
-zh <- TSNE(zh, peak_genes$gene)
-GeneEmbedPlot(zh, peak_genes)
+Similarly, we also visualize the two-dimensional embeddings of genes to find 
+clusters of genes with similar expression pattern.
 
-zh <- UMAP(zh, peak_genes$gene)
-GeneEmbedPlot(zh, peak_genes, method="UMAP")
+```{r}
+zh <- runTSNE(zh, peak_genes$gene)
+geneEmbedPlot(zh, peak_genes)
+
+zh <- runUMAP(zh, peak_genes$gene)
+geneEmbedPlot(zh, peak_genes, method="UMAP")
 ```
 
 Users can then explore these co-regulated genes to address biological questions.
 
 # Plot expression traces of genes
 
-You may get interested in some genes from analysis above, or you have already identified some potential spatially expressed genes from external information. Now you want to view how their expression change across sections. It is a good idea to show the expression of these genes as line plots, which are called **expression traces** of genes.
+You may get interested in some genes from analysis above, or you have already 
+identified some potential spatially expressed genes from external information. 
+Now you want to view how their expression change across sections. It is a good 
+idea to show the expression of these genes as line plots, which are called 
+**expression traces** of genes.
+
 ```{r}
-LinePlot(zh, peak_genes$gene[1:3])
+linePlot(zh, peak_genes$gene[1:3])
 ```
 
-By default, LOESS is used to smooth the lines. You can suppress smoothing by adding parameter `span=0`.
+By default, LOESS is used to smooth the lines. You can suppress smoothing by 
+adding parameter `span=0`.
+
 ```{r}
-LinePlot(zh, peak_genes$gene[1:3], span=0)
+linePlot(zh, peak_genes$gene[1:3], span=0)
 ```
 
-Sometimes it is good to show multiple genes in the same plot so we can directly compare their expression traces. However, the expression levels of some genes may have such a big difference that the expression traces of lowly expressed genes are close to x-axis. In this situation, we suggest using facets. Different gene are shown in different facets so they have different scales.
+Sometimes it is good to show multiple genes in the same plot so we can directly 
+compare their expression traces. However, the expression levels of some genes 
+may have such a big difference that the expression traces of lowly expressed 
+genes are close to x-axis. In this situation, we suggest using facets. Different
+gene are shown in different facets so they have different scales.
 ```{r}
-LinePlot(zh, peak_genes$gene[1:3], facet=TRUE)
+linePlot(zh, peak_genes$gene[1:3], facet=TRUE)
 ```
 
 # Modify plots
-All plots created in this package are ggplots. Therefore, you can easily modify components in plots using the grammar and functions of `r CRANpkg("ggplot2")`, such as colors, labels, themes and so on.
+All plots created in this package are ggplots. Therefore, you can easily modify 
+components in plots using the grammar and functions of `r CRANpkg("ggplot2")`, 
+such as colors, labels, themes and so on.
 
-For example, if you do not like the default colors in `ExpHeatmap`, change them using `scale_fill_gradient2` or `scale_fill_gradientn` with your preferred colors. 
+For example, if you do not like the default colors in `ExpHeatmap`, change them 
+using `scale_fill_gradient2` or `scale_fill_gradientn` with your preferred 
+colors. 
 ```{r}
 library(ggplot2)
-exp_heat <- ExpHeatmap(zh, peak_genes$gene, size=0)
-exp_heat + scale_fill_gradient2(low='blue', mid='white', high='red')
+exp_heat <- expHeatmap(zh, peak_genes$gene, size=0)
+exp_heat + scale_fill_gradient2(low='magenta', mid='black', high='yellow')
+```
+If you prefer plots without grids, try other ggplot themes or change parameters 
+in `theme`.
+If you do not want to show names of all sections but just some of them, change 
+parameters in `scale_x_discrete`.
+
+```{r}
+line <- linePlot(zh, peak_genes$gene[1:3])
+line + 
+  theme_classic() + 
+  scale_x_discrete(breaks=paste('X', seq(5,40,5), sep=''), labels=seq(5,40,5))
 ```
 
 # Session Information

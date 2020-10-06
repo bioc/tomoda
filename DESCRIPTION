@@ -1,6 +1,6 @@
 Package: tomoda
 Title: Tomo-seq data analysis
-Version: 0.99.0
+Version: 0.99.1
 Authors@R: 
     person(given = "Wendao",
            family = "Liu",
@@ -8,10 +8,14 @@ Authors@R:
            email = "liuwd15@tsinghua.org.cn",
 		   comment = c(ORCID = "0000-0002-5124-9338"))
 Description: This package provides many easy-to-use methods to analyze and 
-	visualize tomo-seq data. The main purpose of the package is to find zones
-	with similar transcriptional profiles and spatially expressed genes in a 
-	tomo-seq sample. Several visulization functions are available to create
-	high quality and easy-to-modify plots.
+	visualize tomo-seq data. The tomo-seq technique is based on cryosectioning 
+	of tissue and performing RNA-seq on consecutive sections. (Reference: Kruse 
+	F, Junker JP, van Oudenaarden A, Bakkers J. Tomo-seq: A method to obtain 
+	genome-wide expression data with spatial resolution. Methods Cell Biol. 
+	2016;135:299-307. doi:10.1016/bs.mcb.2016.01.006)
+	The main purpose of the package is to find zones with similar 
+	transcriptional profiles and spatially expressed genes in a tomo-seq sample.
+	Several visulization functions are available to create easy-to-modify plots.
 Depends: R (>= 4.0.0)
 Imports:
 	methods,
@@ -20,7 +24,7 @@ Imports:
 	reshape2,
 	Rtsne,
 	umap,
-	colorRamps,
+	RColorBrewer,
 	ggplot2,
 	ggrepel,
 	SummarizedExperiment
