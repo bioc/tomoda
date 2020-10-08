@@ -143,8 +143,7 @@ kmeansClust <- function(object, centers, matrix='normalized', ...)
     for(i in seq_len(centers))
         cluster_list[[i]] <- as.character(colData(object)$section)[kmeans_section$cluster == i]
 
-    message("K-Means results:\n")
-    print(cluster_list)
+    message("K-Means clustering labels are saved in colData.")
     message("between_SS / total_SS =", percent_between,'\n')
     return(object)
 }
