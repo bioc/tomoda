@@ -56,11 +56,11 @@ of sections.
 
 # Preprocessing
 
-## Create a Tomo object
+## Create an object
 
-Now we create a Tomo object with the raw read count matrix. Genes expressed in 
+Now we create an object representing from the raw read count matrix. Genes expressed in 
 less than 3 sections are filtered out. You can change this threshold by changing
-the parameter `min.section` of function `CreateTomo`. A Tomo object is an 
+the parameter `min.section` of function `createTomo`. The output object is an 
 instance of `r Biocpkg("SummarizedExperiment")`. If you have additional 
 information about sections, save them in `colData(object)`, a data frame used to
 save meta data describing sections.
@@ -74,15 +74,15 @@ If you have a normalized expression matrix rather than raw read count matrix, it
 can also be used for input.
 ```
 your_object <- createTomo(matrix.normalized = normalized) 
-# Replace normalized with your normalized expression matrix.
+# Replace 'normalized' with your normalized expression matrix.
 ```
 
-If you have an existing SummarizedExperiment object, it can also be used for 
-input. Just remember that the object must contain at least one of 'count' assay 
-and 'normalized' assay.
+If you have an existing SummarizedExperiment object, `createTomo` also accepts 
+it as input. Just remember that the object must contain at least one of 'count' 
+assay and 'normalized' assay.
 ```
 your_object <- createTomo(se) 
-# Replace se with a SummarizedExperiment object.
+# Replace 'se' with a SummarizedExperiment object.
 ```
 
 ## Normalize and scale data
@@ -93,7 +93,7 @@ saved in 'count', 'normalized' and 'scale' assays of the object. These matrices
 can be accessed using function `assay`.
 
 ```{r}
-head(assay(zh, 'scaled'))
+head(assay(zh, 'scaled'), 2)
 ```
 
 During normalization, the library sizes of all sections are set to the median of
@@ -164,7 +164,6 @@ could identify a border at X21 ~ X22.
 set.seed(1)
 zh <- runTSNE(zh)
 embedPlot(zh, method="TSNE")
-
 zh <- runUMAP(zh)
 embedPlot(zh, method="UMAP")
 ```
