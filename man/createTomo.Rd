@@ -80,6 +80,6 @@ zh <- createTomo(se)
 \item{\code{\link{createTomo.SummarizedExperiment}}} : creating an object from \code{SummarizedExperiment}.
 \item{\code{\link{normalizeTomo}}} : normalization.
 \item{\code{\link{scaleTomo}}} : scaling.
-\item{\code{\link[SummarizedExperiment]{SummarizedExperiment}}} : operations on \code{SummarizedExperiment}.
+\item{\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}} : operations on \code{SummarizedExperiment}.
 }
 }
