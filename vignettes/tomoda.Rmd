@@ -39,7 +39,8 @@ library(tomoda)
 
 ## Dataset
 This package contains an examplary dataset geneated from 3 day post cryinjury 
-heart of zebrafish, obtained from [GSE74652](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE74652). The 
+heart of zebrafish, obtained from 
+[GSE74652](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE74652). The 
 dataset contains the raw read count of 16495 genes across 40 sections. Here we 
 load the dataset and view the first several rows of it.
 
@@ -58,12 +59,12 @@ of sections.
 
 ## Create an object
 
-Now we create an object representing from the raw read count matrix. Genes expressed in 
-less than 3 sections are filtered out. You can change this threshold by changing
-the parameter `min.section` of function `createTomo`. The output object is an 
-instance of `r Biocpkg("SummarizedExperiment")`. If you have additional 
-information about sections, save them in `colData(object)`, a data frame used to
-save meta data describing sections.
+Now we create an object representing from the raw read count matrix. Genes 
+expressed in less than 3 sections are filtered out. You can change this 
+threshold by changing the parameter `min.section` of function `createTomo`. The 
+output object is an instance of `r Biocpkg("SummarizedExperiment")`. If you have
+additional information about sections, save them in `colData(object)`, a data 
+frame used to save meta data describing sections.
 
 ```{r}
 zh <- createTomo(zh.data)
