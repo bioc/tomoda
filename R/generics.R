@@ -22,8 +22,8 @@
 #' @return A \code{SummarizedExperiment} object. Raw read count matrix, normalized read count matrix and scaled read count matrix are saved in 'count', 'normalized' and 'scale' assays of the object.
 #'
 #' @seealso \itemize{
-#'  \item{\code{\link{createTomo.matrix}}} : creating an object from \code{matrix}.
-#'  \item{\code{\link{createTomo.SummarizedExperiment}}} : creating an object from \code{SummarizedExperiment}.
+#'  \item{\code{\link{tomoMatrix}}} : creating an object from \code{matrix}.
+#'  \item{\code{\link{tomoSummarizedExperiment}}} : creating an object from \code{SummarizedExperiment}.
 #'  \item{\code{\link{normalizeTomo}}} : normalization.
 #'  \item{\code{\link{scaleTomo}}} : scaling.
 #'  \item{\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}} : operations on \code{SummarizedExperiment}.

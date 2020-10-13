@@ -1,6 +1,6 @@
 #' Create an object from matrix
 #'
-#' \code{createTomo.matrix} creates an object from raw read count matrix or normalized read count matrix.
+#' \code{tomoMatrix} creates an object from raw read count matrix or normalized read count matrix.
 #'
 #' @param matrix.count A numeric matrix or matrix-like data stucture that can be coverted to matrix, with genes with rows, sections as columns and values as raw read counts. Columns should be sorted according to section numbers.
 #' @param matrix.normalized A numeric matrix or matrix-like data stucture that can be coverted to matrix, with genes as rows, sections as columns and values as normalized read counts. Columns should be sorted according to order of sections.
@@ -19,9 +19,9 @@
 #'
 #' @examples
 #' data(zh.data)
-#' zh <- createTomo.matrix(zh.data)
+#' zh <- tomoMatrix(zh.data)
 #'
-createTomo.matrix <- function(matrix.count=NULL, matrix.normalized=NULL, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE)
+tomoMatrix <- function(matrix.count=NULL, matrix.normalized=NULL, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE)
 {
     available.count <- !is.null(matrix.count)
     available.normalized <- !is.null(matrix.normalized)
@@ -89,7 +89,7 @@ createTomo.matrix <- function(matrix.count=NULL, matrix.normalized=NULL, min.sec
 
 #' Create an object from SummarizedExperiment
 #'
-#' \code{createTomo.SummarizedExperiment} creates an object from a SummarizedExperiment object.
+#' \code{tomoSummarizedExperiment} creates an object from a SummarizedExperiment object.
 #'
 #' @param se A SummarizedExperiment object, it must contain at least one of 'count' assay and 'normalized' assay.
 #' @param min.section Integer. Genes expressed in less than \code{min.section} sections will be filtered out.
@@ -108,8 +108,8 @@ createTomo.matrix <- function(matrix.count=NULL, matrix.normalized=NULL, min.sec
 #' @examples
 #' data(zh.data)
 #' se <- SummarizedExperiment::SummarizedExperiment(assays=list(count=zh.data))
-#' zh <- createTomo.SummarizedExperiment(se)
-createTomo.SummarizedExperiment <- function(se, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE)
+#' zh <- tomoSummarizedExperiment(se)
+tomoSummarizedExperiment <- function(se, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE)
 {
     available.count <- 'count' %in% assayNames(se)
     available.normalized <- 'normalized' %in% assayNames(se)
@@ -183,30 +183,30 @@ createTomo.SummarizedExperiment <- function(se, min.section=3, normalize=TRUE, n
 #' @aliases createTomo,SummarizedExperiment-method
 setMethod('createTomo', signature(object='SummarizedExperiment'),
           function(object, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE)
-              createTomo.SummarizedExperiment(se=object,
-                                              min.section=min.section,
-                                              normalize=normalize,
-                                              normalize.method=normalize.method,
-                                              scale=scale)
+              tomoSummarizedExperiment(se=object,
+                                       min.section=min.section,
+                                       normalize=normalize,
+                                       normalize.method=normalize.method,
+                                       scale=scale)
 )
 
 #' @rdname createTomo
 #' @aliases createTomo,matrix-method
 setMethod('createTomo', signature(object='matrix'),
           function(object, matrix.normalized=NULL, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE)
-              createTomo.matrix(matrix.count=object,
-                                matrix.normalized=matrix.normalized,
-                                min.section=min.section,
-                                normalize=normalize,
-                                normalize.method=normalize.method,
-                                scale=scale)
+              tomoMatrix(matrix.count=object,
+                         matrix.normalized=matrix.normalized,
+                         min.section=min.section,
+                         normalize=normalize,
+                         normalize.method=normalize.method,
+                         scale=scale)
 )
 
 #' @rdname createTomo
 #' @aliases createTomo,missing-method
 setMethod('createTomo', signature(object='missing'),
           function(matrix.normalized=NULL, min.section=3, normalize=TRUE, normalize.method='median', scale=TRUE, ...)
-              createTomo.matrix(matrix.normalized=matrix.normalized,
+              tomoMatrix(matrix.normalized=matrix.normalized,
                                 min.section=min.section,
                                 normalize=normalize,
                                 normalize.method=normalize.method,
