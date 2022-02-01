@@ -1,6 +1,6 @@
 Package: tomoda
 Title: Tomo-seq data analysis
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: 
     person(given = "Wendao",
            family = "Liu",
@@ -31,7 +31,7 @@ Imports:
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Suggests: 
     knitr,
     rmarkdown,
@@ -44,6 +44,7 @@ biocViews:
 	Sequencing,
 	RNASeq, 
 	Transcriptomics,
+	Spatial,
 	Clustering, 
 	Visualization
 VignetteBuilder: knitr

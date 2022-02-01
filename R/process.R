@@ -27,7 +27,7 @@ normalizeTomo <- function(object, method='median')
     {
         library_size <- apply(assay(object, 'count'), 2, sum)
         target_library_size <- ifelse(method=='cpm', 1e6, median(library_size))
-        if(!method %in% c('median',' cpm'))
+        if(!method %in% c('median', 'cpm'))
             message('Unknown normalization method. Using median library size.')
         assay(object, 'normalized') <- apply(assay(object, 'count'), 2,
                                            function(x) x * target_library_size / sum(x))
