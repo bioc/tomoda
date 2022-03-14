@@ -241,7 +241,7 @@ findPeakGene <- function(object, threshold=1, length=4, matrix='scaled', nperm=1
 {
     if(matrix=='scaled' & !"scaled" %in% assayNames(object))
     {
-        message("scaleTomod data does not exist! Please run function 'scaleTomo' before finding peak genes.\n")
+        message("Scaled data does not exist! Please run function 'scaleTomo' before finding peak genes.\n")
         return()
     }
     else
@@ -278,7 +278,7 @@ findPeakGene <- function(object, threshold=1, length=4, matrix='scaled', nperm=1
                 {
                     n_peak <- 0
                     for(perm in seq_len(nperm))
-                        n_peak <- n_peak + (findPeak(sample(exp_gene))[1] > 0)
+                        n_peak <- n_peak + (findPeak(sample(exp_gene), threshold, length)[1] > 0)
                     pval <- n_peak / nperm
                     saved_pvals[n_gt_threshold] <- pval
                 }
