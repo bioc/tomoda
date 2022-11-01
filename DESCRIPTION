@@ -1,6 +1,6 @@
 Package: tomoda
 Title: Tomo-seq data analysis
-Version: 1.8.0
+Version: 1.9.0
 Authors@R: 
     person(given = "Wendao",
            family = "Liu",
